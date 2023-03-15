@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 
 import logging
 
-logger = logging.getLogger("EDMarketConnector.NextStop")
+logger = logging.getLogger("EDMarketConnector.EDMC-NextStop")
 
 #star type
 SCOOPABLE = ["O","B","A","F","G","K","M"]
@@ -167,6 +167,7 @@ class FancyBoard(BaseBoard):
         if len(self.route) <= 0:
             self.currentIndex = 0
             self.canvas.delete("all")
+            self.rowObjs = []
             self.canvas.create_text(self.size/2, self.size/7/2, anchor=tk.CENTER, fill=self.colors["textMain"], font=self.styles["system"]["option"]["font"], justify=tk.CENTER, text="-------No Route-------")
         else:
             if len(self.rowObjs) != len(self.route):
