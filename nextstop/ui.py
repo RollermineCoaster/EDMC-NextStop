@@ -224,9 +224,5 @@ class FancyBoard(BaseBoard):
                 #if not bottom
                 if index < len(self.route)-1:
                     self.canvas.create_line(self.styles["bottomLine"]["x0"], self.styles["bottomLine"]["y0"]+self.size/7*(index), self.styles["bottomLine"]["x1"], self.styles["bottomLine"]["y1"]+self.size/7*(index), **self.styles["bottomLine"]["option"])
-        totalRow = len(self.route)
-        if len(self.route) > 0:
-            totalRow = len(self.route)
-        else:
-            totalRow = 1
+        totalRow = max(len(self.route), 1)
         self.resizeCanvas((0,0 ,self.size, self.size/7*totalRow))
