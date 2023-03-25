@@ -7,10 +7,11 @@ import tkinter as tk
 from nextstop.util import *
 import copy
 from abc import ABC, abstractmethod
+from config import appname, config
 
 import logging
 
-logger = logging.getLogger("EDMarketConnector.EDMC-NextStop")
+logger = logging.getLogger(f"{appname}.EDMC-NextStop")
 
 #star type
 SCOOPABLE = ["O","B","A","F","G","K","M"]
@@ -19,13 +20,14 @@ DANGER = ["D","N","H"]
 
 class BaseBoard(ABC):
 
-    def __init__(self, frame, size):
+    def __init__(self, frame):
         self.route = []
         self.currentIndex = 0
         self.currentPos = [0.0, 0.0, 0.0]
-        self.size = size
+        self.scale = config.get_int("ui_scale")/100
+        self.size = 300*self.scale
         #create canvas
-        self.canvas = tk.Canvas(frame, width=size, height=0, bd=0, highlightthickness=0)
+        self.canvas = tk.Canvas(frame, width=self.size, height=0, bd=0, highlightthickness=0)
         self.canvas.grid()
         #make canvas scrollable (1 scroll in Windows equal 120)
         self.canvas.bind('<MouseWheel>', lambda event : self.canvas.yview_scroll(int(-1*(event.delta/120)), tk.UNITS))
@@ -46,7 +48,31 @@ class BaseBoard(ABC):
         return self.route[index]["system"]
 
     def getStarTypeText(self, index):
-        return "Unknown "+self.route[index]["starClass"]+" CLASS" if self.route[index]["starTypeName"] == "" else self.route[index]["starTypeName"]
+        name = self.route[index]["starTypeName"]
+        if name != "":
+            return name
+        starClass = self.route[index]["starClass"]
+        if starClass == "L" or starClass == "T" or starClass == "Y":
+            return f"{starClass} (Brown dwarf) Star"
+        elif starClass == "TTS":
+            return "T Tauri Star"
+        elif starClass == "AeBe":
+            return "Herbig Ae/Be Star"
+        elif starClass[0] == "W":
+            text = starClass.replace("W", " ")
+            return f"Wolf-Rayet{text} Star"
+        elif starClass == "MS" or starClass == "S":
+            return f"{starClass}-type Star"
+        elif starClass[0] == "D":
+            return f"White Dwarf ({starClass}) Star"
+        elif starClass == "N":
+            return "Neutron Star"
+        elif starClass == "H":
+            return "Black Hole"
+        elif starClass == "SupermassiveBlackHole":
+            return "Supermassive Black Hole"
+        else:
+            return f"{starClass} Star"
 
     def getDistanceText(self, index):
         #get distance
@@ -89,8 +115,8 @@ class BaseBoard(ABC):
 
 class SimpleBoard(BaseBoard):
 
-    def __init__(self, frame, size):
-        super().__init__(frame, size)
+    def __init__(self, frame):
+        super().__init__(frame)
         #display text
         self.textLVar = tk.StringVar()
         self.textRVar = tk.StringVar()
@@ -102,7 +128,7 @@ class SimpleBoard(BaseBoard):
         self.textRWidget.after(10, lambda: theme.update(self.textRWidget))
         #put text widget inside canvas
         self.canvas.create_window(0, 0, anchor=tk.NW, window=self.textLWidget)
-        self.canvas.create_window(size, 0, anchor=tk.NE, window=self.textRWidget)
+        self.canvas.create_window(self.size, 0, anchor=tk.NE, window=self.textRWidget)
         #make canvas scrollable (1 scroll in Windows equal 120)
         self.textLWidget.bind('<MouseWheel>', lambda event : self.canvas.yview_scroll(int(-1*(event.delta/120)), tk.UNITS))
         self.textRWidget.bind('<MouseWheel>', lambda event : self.canvas.yview_scroll(int(-1*(event.delta/120)), tk.UNITS))
@@ -144,20 +170,21 @@ class SimpleBoard(BaseBoard):
 
 class FancyBoard(BaseBoard):
 
-    def __init__(self, frame, size):
-        super().__init__(frame, size)
+    def __init__(self, frame):
+        super().__init__(frame)
         self.colors = {"bg": "#fff", "textMain": "#000", "textMinor": "#555", "main": "#f00", "minor1": "#888", "minor2": "#bbb", "danger": "#f00"}
+        self.rowHeight = self.size/7
         self.styles = {}
-        self.styles["bullet"] = {"x0": self.size/7/2-self.size/7/8, "y0": self.size/7/2-self.size/7/8,
-                                 "x1": self.size/7/2+self.size/7/8, "y1": self.size/7/2+self.size/7/8,
-                                 "option1": {"fill": self.colors["main"],  "outline": self.colors["main"],  "width": 2/300*self.size},
-                                 "option2": {"fill": self.colors["minor2"], "outline": self.colors["minor1"], "width": 2/300*self.size}}
-        self.styles["system"] =   {"x": self.size/7,   "y": self.size/7*.15,  "option": {"anchor": tk.NW, "fill": self.colors["textMain"],  "font": ('Helvetica', int(16/300*self.size*-1)), "justify": tk.LEFT}}
-        self.styles["starType"] = {"x": self.size/7,   "y": self.size/7*.55,  "option": {"anchor": tk.NW, "fill": self.colors["textMinor"], "font": ('Helvetica', int(12/300*self.size*-1)), "justify": tk.LEFT}}
-        self.styles["distance"] = {"x": self.size*.95, "y": self.size/7*.15,  "option": {"anchor": tk.NE, "fill": self.colors["textMinor"], "font": ('Helvetica', int(14/300*self.size*-1)), "justify": tk.RIGHT}}
-        self.styles["reminder"] = {"x": self.size*.95, "y": self.size/7*.5,   "option": {"anchor": tk.NE, "fill": self.colors["textMinor"], "font": ('Helvetica', int(16/300*self.size*-1)), "justify": tk.RIGHT}}
-        self.styles["bottomLine"] = {"x0": self.size*.025, "x1": self.size*.975, "y0": self.size/7, "y1": self.size/7,   "option": {"fill": self.colors["minor1"], "width": 1/300*self.size}}
-        self.styles["bulletLine"] = {"x0": self.size/7/2, "x1": self.size/7/2, "y0": self.size/7/2, "y1": self.size/7/2, "option": {"fill": self.colors["main"], "width": 2/300*self.size}}
+        self.styles["bullet"] = {"x0": self.rowHeight/2-self.rowHeight/8, "y0": self.rowHeight/2-self.rowHeight/8,
+                                 "x1": self.rowHeight/2+self.rowHeight/8, "y1": self.rowHeight/2+self.rowHeight/8,
+                                 "option1": {"fill": self.colors["main"],  "outline": self.colors["main"],  "width": 2*self.scale},
+                                 "option2": {"fill": self.colors["minor2"], "outline": self.colors["minor1"], "width": 2*self.scale}}
+        self.styles["system"] =   {"x": self.rowHeight,   "y": self.rowHeight*.15,  "option": {"anchor": tk.NW, "fill": self.colors["textMain"],  "font": ('Helvetica', int(-16*self.scale)), "justify": tk.LEFT}}
+        self.styles["starType"] = {"x": self.rowHeight,   "y": self.rowHeight*.55,  "option": {"anchor": tk.NW, "fill": self.colors["textMinor"], "font": ('Helvetica', int(-12*self.scale)), "justify": tk.LEFT}}
+        self.styles["distance"] = {"x": self.size*.95, "y": self.rowHeight*.15,  "option": {"anchor": tk.NE, "fill": self.colors["textMinor"], "font": ('Helvetica', int(-14*self.scale)), "justify": tk.RIGHT}}
+        self.styles["reminder"] = {"x": self.size*.95, "y": self.rowHeight*.5,   "option": {"anchor": tk.NE, "fill": self.colors["textMinor"], "font": ('Helvetica', int(-16*self.scale)), "justify": tk.RIGHT}}
+        self.styles["bottomLine"] = {"x0": self.size*.025, "x1": self.size*.975, "y0": self.rowHeight, "y1": self.rowHeight,   "option": {"fill": self.colors["minor1"], "width": 1*self.scale}}
+        self.styles["bulletLine"] = {"x0": self.rowHeight/2, "x1": self.rowHeight/2, "y0": self.rowHeight/2, "y1": self.rowHeight/2, "option": {"fill": self.colors["main"], "width": 2*self.scale}}
         self.rowObjs = []
         self.canvas.config(bg=self.colors["bg"])
         self.updateCanvas()
@@ -168,21 +195,21 @@ class FancyBoard(BaseBoard):
             self.currentIndex = 0
             self.canvas.delete("all")
             self.rowObjs = []
-            self.canvas.create_text(self.size/2, self.size/7/2, anchor=tk.CENTER, fill=self.colors["textMain"], font=self.styles["system"]["option"]["font"], justify=tk.CENTER, text="-------No Route-------")
+            self.canvas.create_text(self.size/2, self.rowHeight/2, anchor=tk.CENTER, fill=self.colors["textMain"], font=self.styles["system"]["option"]["font"], justify=tk.CENTER, text="-------No Route-------")
         else:
             if len(self.rowObjs) != len(self.route):
                 self.canvas.delete("all")
                 self.rowObjs = []
-                self.canvas.create_line(self.styles["bulletLine"]["x0"], self.styles["bulletLine"]["y0"], self.styles["bulletLine"]["x1"], self.styles["bulletLine"]["y1"]+self.size/7*(len(self.route)-1), **self.styles["bulletLine"]["option"])
+                self.canvas.create_line(self.styles["bulletLine"]["x0"], self.styles["bulletLine"]["y0"], self.styles["bulletLine"]["x1"], self.styles["bulletLine"]["y1"]+self.rowHeight*(len(self.route)-1), **self.styles["bulletLine"]["option"])
             #loop through route list
             for index in range(len(self.route)):
                 if len(self.rowObjs) != len(self.route):
                     rowObj = {}
-                    rowObj["bullet"] =   self.canvas.create_oval(self.styles["bullet"]["x0"], self.styles["bullet"]["y0"]+self.size/7*(index), self.styles["bullet"]["x1"], self.styles["bullet"]["y1"]+self.size/7*(index))
-                    rowObj["system"] =   self.canvas.create_text(self.styles["system"]["x"],   self.styles["system"]["y"]+self.size/7*(index),   **self.styles["system"]["option"])
-                    rowObj["starType"] = self.canvas.create_text(self.styles["starType"]["x"], self.styles["starType"]["y"]+self.size/7*(index), **self.styles["starType"]["option"])
-                    rowObj["distance"] = self.canvas.create_text(self.styles["distance"]["x"], self.styles["distance"]["y"]+self.size/7*(index), **self.styles["distance"]["option"])
-                    rowObj["reminder"] = self.canvas.create_text(self.styles["reminder"]["x"], self.styles["reminder"]["y"]+self.size/7*(index), **self.styles["reminder"]["option"])
+                    rowObj["bullet"] =   self.canvas.create_oval(self.styles["bullet"]["x0"], self.styles["bullet"]["y0"]+self.rowHeight*(index), self.styles["bullet"]["x1"], self.styles["bullet"]["y1"]+self.rowHeight*(index))
+                    rowObj["system"] =   self.canvas.create_text(self.styles["system"]["x"],   self.styles["system"]["y"]+self.rowHeight*(index),   **self.styles["system"]["option"])
+                    rowObj["starType"] = self.canvas.create_text(self.styles["starType"]["x"], self.styles["starType"]["y"]+self.rowHeight*(index), **self.styles["starType"]["option"])
+                    rowObj["distance"] = self.canvas.create_text(self.styles["distance"]["x"], self.styles["distance"]["y"]+self.rowHeight*(index), **self.styles["distance"]["option"])
+                    rowObj["reminder"] = self.canvas.create_text(self.styles["reminder"]["x"], self.styles["reminder"]["y"]+self.rowHeight*(index), **self.styles["reminder"]["option"])
                     self.rowObjs.append(rowObj)
                 else:
                     rowObj = self.rowObjs[index]
@@ -223,6 +250,6 @@ class FancyBoard(BaseBoard):
                     self.canvas.itemconfigure(rowObj["reminder"], fill=self.colors["danger"])
                 #if not bottom
                 if index < len(self.route)-1:
-                    self.canvas.create_line(self.styles["bottomLine"]["x0"], self.styles["bottomLine"]["y0"]+self.size/7*(index), self.styles["bottomLine"]["x1"], self.styles["bottomLine"]["y1"]+self.size/7*(index), **self.styles["bottomLine"]["option"])
+                    self.canvas.create_line(self.styles["bottomLine"]["x0"], self.styles["bottomLine"]["y0"]+self.rowHeight*(index), self.styles["bottomLine"]["x1"], self.styles["bottomLine"]["y1"]+self.rowHeight*(index), **self.styles["bottomLine"]["option"])
         totalRow = max(len(self.route), 1)
-        self.resizeCanvas((0,0 ,self.size, self.size/7*totalRow))
+        self.resizeCanvas((0,0 ,self.size, self.rowHeight*totalRow))

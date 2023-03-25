@@ -28,8 +28,6 @@ class NextStop:
         self.MODES = ["Simple", "Fancy"]
         self.SIMPLEMODE = self.MODES[0]
         self.FANCYMODE = self.MODES[1]
-        #max size of the canvas
-        self.size = 300*config.get_int("ui_scale")/100
         #default simple mode
         if config.get_str('nextStop_Mode') == None:
             config.set('nextStop_Mode', self.MODES[0])
@@ -109,9 +107,12 @@ class NextStop:
         config.set('nextStop_Mode', mode)
         if mode == self.SIMPLEMODE and not isinstance(self.ui, SimpleBoard) or mode == self.FANCYMODE and not isinstance(self.ui, FancyBoard):
             logger.info("Removing old board.")
+            #get route and current pos from old board
             route = self.getRoute()
             currentPos = self.getCurrentPos()
+            #destory old board
             self.ui.destroy()
+            #make a new board
             self.createBoard()
             self.setRoute(route)
             self.setCurrentPos(currentPos)
@@ -136,14 +137,14 @@ class NextStop:
     def createBoard(self):
         if self.mode.get() == self.SIMPLEMODE:
             logger.info("Display in simple mode")
-            self.ui = SimpleBoard(self.frame, self.size)
+            self.ui = SimpleBoard(self.frame)
         elif self.mode.get() == self.FANCYMODE:
             logger.info("Display in fancy mode")
-            self.ui = FancyBoard(self.frame, self.size)
+            self.ui = FancyBoard(self.frame)
 
     def onEvent(self, cmdr: str, is_beta: bool, system: str, station: str, entry: dict, state: dict) -> Optional[str]:
         if entry["event"] == "StartUp" and state["NavRoute"]["event"] == "NavRoute" or entry["event"] == "NavRoute":
-            logger.debug("Plot route.")
+            logger.info("Route detected! Updating UI.")
             #clear route list
             route = []
             #loop through the route
@@ -166,12 +167,12 @@ class NextStop:
             thread.start()
             logger.debug('Done.')
         elif entry["event"] == "NavRouteClear":
-            logger.debug("Route clear.")
+            logger.info("Route clear! Updating UI.")
             #clear route list
             self.setRoute([])
             self.ui.updateCanvas()
         elif entry["event"] == "FSDJump":
-            logger.debug("Jump end.")
+            logger.info("Arrived at another system! Updating current position.")
             #update current pos
             self.setCurrentPos(entry["StarPos"])
             self.ui.updateCanvas()
