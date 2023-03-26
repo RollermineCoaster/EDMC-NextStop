@@ -133,13 +133,13 @@ class SimpleBoard(BaseBoard):
 
     def __init__(self, frame):
         super().__init__(frame)
-        self.colors = {"text": "#000", "danger": "#f00"}
+        self.colors = {"danger": "#f00"}
         self.styles = {}
-        self.styles["system"] =     {"x": 0,           "option": {"anchor": tk.NW, "fill": config.get_str('dark_text'), "font": 'TkDefaultFont', "justify": tk.LEFT}}
-        self.styles["starType"] =   {"x": 0,           "option": {"anchor": tk.NW, "fill": config.get_str('dark_text'), "font": 'TkDefaultFont', "justify": tk.LEFT}}
-        self.styles["distance"] =   {"x": self.size,   "option": {"anchor": tk.NE, "fill": config.get_str('dark_text'), "font": 'TkDefaultFont', "justify": tk.RIGHT}}
-        self.styles["reminder"] =   {"x": self.size,   "option": {"anchor": tk.NE, "fill": config.get_str('dark_text'), "font": (LOGOFONT, 12),  "justify": tk.RIGHT}}
-        self.styles["bottomLine"] = {"x": self.size/2, "option": {"anchor": tk.N,  "fill": config.get_str('dark_text'), "font": 'TkDefaultFont', "justify": tk.CENTER}}
+        self.styles["system"] =     {"x": 0,           "option": {"anchor": tk.NW, "justify": tk.LEFT}}
+        self.styles["starType"] =   {"x": 0,           "option": {"anchor": tk.NW, "justify": tk.LEFT}}
+        self.styles["distance"] =   {"x": self.size,   "option": {"anchor": tk.NE, "justify": tk.RIGHT}}
+        self.styles["reminder"] =   {"x": self.size,   "option": {"anchor": tk.NE, "justify": tk.RIGHT}}
+        self.styles["bottomLine"] = {"x": self.size/2, "option": {"anchor": tk.N,  "justify": tk.CENTER}}
         self.rowObjs = []
         self.updateCanvas()
 
@@ -165,6 +165,7 @@ class SimpleBoard(BaseBoard):
                     cursorY += max(getCanvasObjHeight(self.canvas, rowObj["system"]), getCanvasObjHeight(self.canvas, rowObj["distance"]))
                     rowObj["starType"] = self.canvas.create_text(self.styles["starType"]["x"], cursorY, **self.styles["starType"]["option"])
                     rowObj["reminder"] = self.canvas.create_text(self.styles["reminder"]["x"], cursorY, **self.styles["reminder"]["option"])
+                    self.canvas.addtag_withtag("logo", rowObj["reminder"])
                     cursorY += max(getCanvasObjHeight(self.canvas, rowObj["starType"]), getCanvasObjHeight(self.canvas, rowObj["reminder"]))
                     self.rowObjs.append(rowObj)
                 else:
@@ -176,15 +177,25 @@ class SimpleBoard(BaseBoard):
                 if self.getDistanceText(index) == CURRENT:
                     self.currentIndex = index
                 if self.getReminderText(index) == DANGERLOGO:
-                    self.canvas.itemconfigure(rowObj["reminder"], fill=self.colors["danger"])
+                    self.canvas.itemconfigure(rowObj["reminder"])
+                    self.canvas.addtag_withtag("danger", rowObj["reminder"])
                 #if not bottom
                 if len(self.rowObjs) != len(self.route):
-                    bottomLine = self.canvas.create_text(self.styles["bottomLine"]["x"], cursorY, **self.styles["bottomLine"]["option"], text="---------------------------------------------------------")
+                    bottomLine = self.canvas.create_text(self.styles["bottomLine"]["x"], cursorY, **self.styles["bottomLine"]["option"])
+                    self.canvas.addtag_withtag("line", bottomLine)
                     cursorY += getCanvasObjHeight(self.canvas, bottomLine)
         self.resizeCanvas(self.canvas.bbox("all"))
+        self.canvas.after(10, lambda: self.updateTheme())
 
     def updateTheme(self):
         super().updateTheme()
+        self.canvas.itemconfigure("all", fill=theme.current["foreground"], font=theme.current["font"])
+        self.canvas.itemconfigure("logo", font=(LOGOFONT, 12))
+        self.canvas.itemconfigure("danger", fill=self.colors["danger"])
+        text = ""
+        while getCanvasObjWidth(self.canvas, "line") < self.size:
+            text += "-"
+            self.canvas.itemconfigure("line", text=text)
 
 class FancyBoard(BaseBoard):
 

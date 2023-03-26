@@ -29,7 +29,7 @@ class NextStop:
         self.SIMPLEMODE = self.MODES[0]
         self.FANCYMODE = self.MODES[1]
         #default simple mode
-        if config.get_str('nextStop_Mode') == None:
+        if not config.get_str('nextStop_Mode'):
             config.set('nextStop_Mode', self.MODES[0])
         #config variable
         self.mode = tk.StringVar(value=config.get_str('nextStop_Mode'))
@@ -40,25 +40,25 @@ class NextStop:
         logger.info("NextStop instantiated")
 
     def getRoute(self):
-        if self.ui == None:
+        if not self.ui:
             logger.info("Failed to getRoute! UI module is None.")
         else:
             return self.ui.getRoute()
 
     def setRoute(self, route):
-        if self.ui == None:
+        if not self.ui:
             logger.info("Failed to setRoute! UI module is None.")
         else:
             self.ui.setRoute(route)
 
     def getCurrentPos(self):
-        if self.ui == None:
+        if not self.ui:
             logger.info("Failed to getCurrentPos! UI module is None.")
         else:
             return self.ui.getCurrentPos()
 
     def setCurrentPos(self, currentPos):
-        if self.ui == None:
+        if not self.ui:
             logger.info("Failed to setCurrentPos! UI module is None.")
         else:
             self.ui.setCurrentPos(currentPos)
@@ -117,7 +117,7 @@ class NextStop:
             self.setRoute(route)
             self.setCurrentPos(currentPos)
             self.ui.updateCanvas()
-            self.ui.updateTheme()
+        self.ui.updateTheme()
 
     def setup_main_ui(self, parent: tk.Frame) -> tk.Frame:
         """

@@ -7,6 +7,10 @@ def getCanvasObjHeight(canvas, id):
     _, y1, _, y2 = canvas.bbox(id)
     return abs(y2-y1)
 
+def getCanvasObjWidth(canvas, id):
+    x1, _, x2, _ = canvas.bbox(id)
+    return abs(x2-x1)
+
 def resizeCanvasText(canvas, id, width):
     #remove the width limit of the object
     canvas.itemconfigure(id, width=0)
