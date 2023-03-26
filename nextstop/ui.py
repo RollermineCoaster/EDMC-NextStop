@@ -29,8 +29,10 @@ DANGER = ["D","N","H"]
 LOGOFONT = "nextstop-logo"
 FUELSTARLOGO =    "\uE800"
 DANGERLOGO =      "\uE801"
-THARGOIDWARLOGO = "\uE802"
-EDSMLOGO =        "\uE810"
+THARGOIDWARLOGO = "\uE810"
+EDSMLOGO =        "\uE820"
+BULLETBG =        "\uF111"
+BULLETFG =        "\uF10C"
 
 CURRENT = "CURRENT"
 
@@ -40,8 +42,7 @@ class BaseBoard(ABC):
         self.route = []
         self.currentIndex = 0
         self.currentPos = [0.0, 0.0, 0.0]
-        self.scale = config.get_int("ui_scale")/100
-        self.size = 300*self.scale
+        self.size = 300*config.get_int("ui_scale")/100
         #create canvas
         self.canvas = tk.Canvas(frame, width=self.size, height=0, bd=0, highlightthickness=0)
         self.canvas.grid()
@@ -204,16 +205,14 @@ class FancyBoard(BaseBoard):
         self.colors = {"bg": "#fff", "textMain": "#000", "textMinor": "#555", "main": "#f00", "minor1": "#888", "minor2": "#bbb", "danger": "#f00"}
         self.rowHeight = self.size/7
         self.styles = {}
-        self.styles["bullet"] = {"x0": self.rowHeight/2-self.rowHeight/8, "y0": self.rowHeight/2-self.rowHeight/8,
-                                 "x1": self.rowHeight/2+self.rowHeight/8, "y1": self.rowHeight/2+self.rowHeight/8,
-                                 "option1": {"fill": self.colors["main"],  "outline": self.colors["main"],  "width": 2*self.scale},
-                                 "option2": {"fill": self.colors["minor2"], "outline": self.colors["minor1"], "width": 2*self.scale}}
-        self.styles["system"] =   {"x": self.rowHeight, "y": self.rowHeight*.15,  "option": {"anchor": tk.NW, "fill": self.colors["textMain"],  "font": ('Helvetica', 12), "justify": tk.LEFT}}
-        self.styles["starType"] = {"x": self.rowHeight, "y": self.rowHeight*.55,  "option": {"anchor": tk.NW, "fill": self.colors["textMinor"], "font": ('Helvetica', 9),  "justify": tk.LEFT}}
-        self.styles["distance"] = {"x": self.size*.95,  "y": self.rowHeight*.15,  "option": {"anchor": tk.NE, "fill": self.colors["textMinor"], "font": ('Helvetica', 11), "justify": tk.RIGHT}}
-        self.styles["reminder"] = {"x": self.size*.95,  "y": self.rowHeight*.5,   "option": {"anchor": tk.NE, "fill": self.colors["textMinor"], "font": (LOGOFONT,    12), "justify": tk.RIGHT}}
-        self.styles["bottomLine"] = {"x0": self.size*.025, "x1": self.size*.975, "y0": self.rowHeight, "y1": self.rowHeight,   "option": {"fill": self.colors["minor1"], "width": 1*self.scale}}
-        self.styles["bulletLine"] = {"x0": self.rowHeight/2, "x1": self.rowHeight/2, "y0": self.rowHeight/2, "y1": self.rowHeight/2, "option": {"fill": self.colors["main"], "width": 2*self.scale}}
+        self.styles["bulletBG"] = {"x": self.rowHeight/2, "y": self.rowHeight/2,    "option": {"anchor": tk.CENTER, "fill": self.colors["minor2"],    "font": (LOGOFONT,    12), "justify": tk.CENTER, "text":BULLETBG}}
+        self.styles["bulletFG"] = {"x": self.rowHeight/2, "y": self.rowHeight/2,    "option": {"anchor": tk.CENTER, "fill": self.colors["minor1"],    "font": (LOGOFONT,    12), "justify": tk.CENTER, "text":BULLETFG}}
+        self.styles["system"] =   {"x": self.rowHeight,   "y": self.rowHeight*.15,  "option": {"anchor": tk.NW,     "fill": self.colors["textMain"],  "font": ('Helvetica', 12), "justify": tk.LEFT}}
+        self.styles["starType"] = {"x": self.rowHeight,   "y": self.rowHeight*.55,  "option": {"anchor": tk.NW,     "fill": self.colors["textMinor"], "font": ('Helvetica', 9),  "justify": tk.LEFT}}
+        self.styles["distance"] = {"x": self.size*.95,    "y": self.rowHeight*.15,  "option": {"anchor": tk.NE,     "fill": self.colors["textMinor"], "font": ('Helvetica', 11), "justify": tk.RIGHT}}
+        self.styles["reminder"] = {"x": self.size*.95,    "y": self.rowHeight*.5,   "option": {"anchor": tk.NE,     "fill": self.colors["textMinor"], "font": (LOGOFONT,    12), "justify": tk.RIGHT}}
+        self.styles["bottomLine"] = {"x0": self.size*.025,   "x1": self.size*.975,   "y0": self.rowHeight,   "y1": self.rowHeight,   "option": {"fill": self.colors["minor1"], "width": "0.766p"}}
+        self.styles["bulletLine"] = {"x0": self.rowHeight/2, "x1": self.rowHeight/2, "y0": self.rowHeight/2, "y1": self.rowHeight/2, "option": {"fill": self.colors["main"],   "width": "1.5p"}}
         self.rowObjs = []
         self.canvas.config(bg=self.colors["bg"])
         self.updateCanvas()
@@ -234,7 +233,8 @@ class FancyBoard(BaseBoard):
             for index in range(len(self.route)):
                 if len(self.rowObjs) != len(self.route):
                     rowObj = {}
-                    rowObj["bullet"] =   self.canvas.create_oval(self.styles["bullet"]["x0"], self.styles["bullet"]["y0"]+self.rowHeight*(index), self.styles["bullet"]["x1"], self.styles["bullet"]["y1"]+self.rowHeight*(index))
+                    rowObj["bulletBG"] = self.canvas.create_text(self.styles["bulletBG"]["x"], self.styles["bulletBG"]["y"]+self.rowHeight*(index), **self.styles["bulletBG"]["option"])
+                    rowObj["bulletFG"] = self.canvas.create_text(self.styles["bulletFG"]["x"], self.styles["bulletFG"]["y"]+self.rowHeight*(index), **self.styles["bulletFG"]["option"])
                     rowObj["system"] =   self.canvas.create_text(self.styles["system"]["x"],   self.styles["system"]["y"]+self.rowHeight*(index),   **self.styles["system"]["option"])
                     rowObj["starType"] = self.canvas.create_text(self.styles["starType"]["x"], self.styles["starType"]["y"]+self.rowHeight*(index), **self.styles["starType"]["option"])
                     rowObj["distance"] = self.canvas.create_text(self.styles["distance"]["x"], self.styles["distance"]["y"]+self.rowHeight*(index), **self.styles["distance"]["option"])
@@ -253,9 +253,11 @@ class FancyBoard(BaseBoard):
                 self.canvas.itemconfigure(rowObj["reminder"], text=self.getReminderText(index))
                 if self.getDistanceText(index) == CURRENT:
                     self.currentIndex = index
-                    self.canvas.itemconfigure(rowObj["bullet"], **self.styles["bullet"]["option1"])
+                    self.canvas.itemconfigure(rowObj["bulletBG"], fill=self.colors["main"])
+                    self.canvas.itemconfigure(rowObj["bulletFG"], fill=self.colors["main"])
                 else:
-                    self.canvas.itemconfigure(rowObj["bullet"], **self.styles["bullet"]["option2"])
+                    self.canvas.itemconfigure(rowObj["bulletBG"], fill=self.colors["minor2"])
+                    self.canvas.itemconfigure(rowObj["bulletFG"], fill=self.colors["minor1"])
                 if self.getReminderText(index) == DANGERLOGO:
                     self.canvas.itemconfigure(rowObj["reminder"], fill=self.colors["danger"])
                 #if not bottom
