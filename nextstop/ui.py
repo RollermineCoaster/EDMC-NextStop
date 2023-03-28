@@ -8,6 +8,7 @@ from nextstop.util import *
 import copy
 from abc import ABC, abstractmethod
 from config import appname, config
+import webbrowser
 
 import os
 from os.path import basename, dirname, join
@@ -110,6 +111,9 @@ class BaseBoard(ABC):
         else:
             return ""
 
+    def getEDSMUrl(self, index):
+        return self.route[index]["edsmUrl"]
+
     def resizeCanvas(self, bbox):
         self.canvas.config(scrollregion=bbox)
         #resize the canvas
@@ -211,6 +215,7 @@ class FancyBoard(BaseBoard):
         self.styles["starType"] = {"x": self.rowHeight,   "y": self.rowHeight*.55,  "option": {"anchor": tk.NW,     "fill": self.colors["textMinor"], "font": ('Helvetica', 9),  "justify": tk.LEFT}}
         self.styles["distance"] = {"x": self.size*.95,    "y": self.rowHeight*.15,  "option": {"anchor": tk.NE,     "fill": self.colors["textMinor"], "font": ('Helvetica', 11), "justify": tk.RIGHT}}
         self.styles["reminder"] = {"x": self.size*.95,    "y": self.rowHeight*.5,   "option": {"anchor": tk.NE,     "fill": self.colors["textMinor"], "font": (LOGOFONT,    12), "justify": tk.RIGHT}}
+        self.styles["edsmLogo"] = {"x": self.size*.90,    "y": self.rowHeight*.5,   "option": {"anchor": tk.NE,     "fill": self.colors["textMinor"], "font": (LOGOFONT,    12), "justify": tk.RIGHT}}
         self.styles["bottomLine"] = {"x0": self.size*.025,   "x1": self.size*.975,   "y0": self.rowHeight,   "y1": self.rowHeight,   "option": {"fill": self.colors["minor1"], "width": "0.766p"}}
         self.styles["bulletLine"] = {"x0": self.rowHeight/2, "x1": self.rowHeight/2, "y0": self.rowHeight/2, "y1": self.rowHeight/2, "option": {"fill": self.colors["main"],   "width": "1.5p"}}
         self.rowObjs = []
@@ -239,6 +244,7 @@ class FancyBoard(BaseBoard):
                     rowObj["starType"] = self.canvas.create_text(self.styles["starType"]["x"], self.styles["starType"]["y"]+self.rowHeight*(index), **self.styles["starType"]["option"])
                     rowObj["distance"] = self.canvas.create_text(self.styles["distance"]["x"], self.styles["distance"]["y"]+self.rowHeight*(index), **self.styles["distance"]["option"])
                     rowObj["reminder"] = self.canvas.create_text(self.styles["reminder"]["x"], self.styles["reminder"]["y"]+self.rowHeight*(index), **self.styles["reminder"]["option"])
+                    rowObj["edsmLogo"] = self.canvas.create_text(self.styles["edsmLogo"]["x"], self.styles["edsmLogo"]["y"]+self.rowHeight*(index), **self.styles["edsmLogo"]["option"])
                     self.rowObjs.append(rowObj)
                 else:
                     rowObj = self.rowObjs[index]
@@ -251,6 +257,12 @@ class FancyBoard(BaseBoard):
                 resizeCanvasText(self.canvas, rowObj["distance"], "52p")
 
                 self.canvas.itemconfigure(rowObj["reminder"], text=self.getReminderText(index))
+                if self.getEDSMUrl(index) == "":
+                    self.canvas.itemconfigure(rowObj["edsmLogo"], text="")
+                    self.canvas.tag_unbind(rowObj["edsmLogo"], "<Button-1>")
+                else:
+                    self.canvas.itemconfigure(rowObj["edsmLogo"], text=EDSMLOGO)
+                    self.canvas.tag_bind(rowObj["edsmLogo"], "<Button-1>", lambda event, url=self.getEDSMUrl(index) : webbrowser.open(url))
                 if self.getDistanceText(index) == CURRENT:
                     self.currentIndex = index
                     self.canvas.itemconfigure(rowObj["bulletBG"], fill=self.colors["main"])

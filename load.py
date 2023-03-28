@@ -151,9 +151,11 @@ class NextStop:
             for dest in state["NavRoute"]["Route"]:
                 temp = {}
                 temp["system"] = dest["StarSystem"]
+                temp["id64"] = dest["SystemAddress"]
                 temp["pos"] = dest["StarPos"]
                 #need EDSM to check
                 temp["starTypeName"] = ""
+                temp["edsmUrl"] = ""
                 temp["starClass"] = dest["StarClass"]
                 route.append(temp)
             logger.debug("Route: "+str(route))
@@ -205,6 +207,7 @@ def worker() -> None:
         for row in data:
             routeID = routeIDs[row["name"]]
             route[routeID]["starTypeName"] = row["primaryStar"]["type"] if "type" in row["primaryStar"] else ""
+            route[routeID]["edsmUrl"] = "https://www.edsm.net/en/system?systemID64="+str(route[routeID]["id64"])
         logger.debug("Route after update: "+str(route))
         app.setRoute(route)
         app.frame.event_generate('<<EDSMUpdate>>', when="tail")
