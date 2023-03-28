@@ -37,6 +37,10 @@ class NextStop:
         self.ui = None
         self.frame = None
         logger.debug("Config: nextStop_Mode = "+self.mode.get())
+        #get info from DCoH using thread
+        thread = Thread(target=DCoHWorker, name='DCoH worker')
+        thread.daemon = True
+        thread.start()
         logger.info("NextStop instantiated")
 
     def getRoute(self):
@@ -50,6 +54,18 @@ class NextStop:
             logger.info("Failed to setRoute! UI module is None.")
         else:
             self.ui.setRoute(route)
+
+    def getThargoidSystems(self):
+        if not self.ui:
+            logger.info("Failed to getThargoidSystems! UI module is None.")
+        else:
+            return self.ui.getThargoidSystems()
+
+    def setThargoidSystems(self, thargoidSystems):
+        if not self.ui:
+            logger.info("Failed to setThargoidSystems! UI module is None.")
+        else:
+            self.ui.setThargoidSystems(thargoidSystems)
 
     def getCurrentPos(self):
         if not self.ui:
@@ -164,7 +180,7 @@ class NextStop:
             self.setCurrentPos(state["StarPos"])
             self.ui.updateCanvas()
             #get info from EDSM using thread
-            thread = Thread(target=worker, name='EDSM worker')
+            thread = Thread(target=EDSMworker, name='EDSM worker')
             thread.daemon = True
             thread.start()
             logger.debug('Done.')
@@ -179,7 +195,7 @@ class NextStop:
             self.setCurrentPos(entry["StarPos"])
             self.ui.updateCanvas()
 
-def worker() -> None:
+def EDSMworker() -> None:
     try:
         logger.debug("Worker starting.")
         url = "https://www.edsm.net/api-v1/systems"
@@ -210,6 +226,26 @@ def worker() -> None:
             route[routeID]["edsmUrl"] = "https://www.edsm.net/en/system?systemID64="+str(route[routeID]["id64"])
         logger.debug("Route after update: "+str(route))
         app.setRoute(route)
+        app.frame.event_generate('<<EDSMUpdate>>', when="tail")
+    except Exception as e:
+        logger.error(type(e).__name__+e.args)
+
+def DCoHWorker() -> None:
+    try:
+        logger.debug("DCoHWorker starting.")
+        url = "https://dcoh.watch/api/v1/overwatch/systems"
+        logger.debug("URL: "+url)
+        #get info using the url above
+        req = requests.get(url)
+        if not req.status_code == requests.codes.ok:
+            logger.error("Request not ok! Code: "+str(req.status_code))
+        data = req.json()
+        #logger.debug("Data: "+str(data))
+        thargoidSystems = {}
+        for row in data["systems"]:
+            thargoidSystems[row["systemAddress"]] = row["thargoidLevel"]["name"]
+        logger.debug("Thargoid systems: "+str(thargoidSystems))
+        app.setThargoidSystems(thargoidSystems)
         app.frame.event_generate('<<EDSMUpdate>>', when="tail")
     except Exception as e:
         logger.error(type(e).__name__+e.args)

@@ -35,12 +35,15 @@ EDSMLOGO =        "\uE820"
 BULLETBG =        "\uF111"
 BULLETFG =        "\uF10C"
 
+THARGOIDCOLORS = {"Alert": "#FFD00F", "Invasion": "#FF6F00", "Controlled": "#286300", "Maelstrom": "#900", "Recovery": "#9F1BFF"}
+
 CURRENT = "CURRENT"
 
 class BaseBoard(ABC):
 
     def __init__(self, frame):
         self.route = []
+        self.thargoidSystems= {}
         self.currentIndex = 0
         self.currentPos = [0.0, 0.0, 0.0]
         self.size = 300*config.get_int("ui_scale")/100
@@ -55,6 +58,12 @@ class BaseBoard(ABC):
 
     def getRoute(self):
         return copy.deepcopy(self.route)
+
+    def setThargoidSystems(self, thargoidSystems):
+        self.thargoidSystems = copy.deepcopy(thargoidSystems)
+
+    def getThargoidSystems(self):
+        return copy.deepcopy(self.thargoidSystems)
 
     def setCurrentPos(self, currentPos):
         self.currentPos = copy.deepcopy(currentPos)
@@ -113,6 +122,9 @@ class BaseBoard(ABC):
 
     def getEDSMUrl(self, index):
         return self.route[index]["edsmUrl"]
+
+    def getID64(self, index):
+        return self.route[index]["id64"]
 
     def resizeCanvas(self, bbox):
         self.canvas.config(scrollregion=bbox)
@@ -207,15 +219,16 @@ class FancyBoard(BaseBoard):
     def __init__(self, frame):
         super().__init__(frame)
         self.colors = {"bg": "#fff", "textMain": "#000", "textMinor": "#555", "main": "#f00", "minor1": "#888", "minor2": "#bbb", "danger": "#f00"}
-        self.rowHeight = self.size/7
+        self.rowHeight = self.size/6
         self.styles = {}
-        self.styles["bulletBG"] = {"x": self.rowHeight/2, "y": self.rowHeight/2,    "option": {"anchor": tk.CENTER, "fill": self.colors["minor2"],    "font": (LOGOFONT,    12), "justify": tk.CENTER, "text":BULLETBG}}
-        self.styles["bulletFG"] = {"x": self.rowHeight/2, "y": self.rowHeight/2,    "option": {"anchor": tk.CENTER, "fill": self.colors["minor1"],    "font": (LOGOFONT,    12), "justify": tk.CENTER, "text":BULLETFG}}
-        self.styles["system"] =   {"x": self.rowHeight,   "y": self.rowHeight*.15,  "option": {"anchor": tk.NW,     "fill": self.colors["textMain"],  "font": ('Helvetica', 12), "justify": tk.LEFT}}
-        self.styles["starType"] = {"x": self.rowHeight,   "y": self.rowHeight*.55,  "option": {"anchor": tk.NW,     "fill": self.colors["textMinor"], "font": ('Helvetica', 9),  "justify": tk.LEFT}}
-        self.styles["distance"] = {"x": self.size*.95,    "y": self.rowHeight*.15,  "option": {"anchor": tk.NE,     "fill": self.colors["textMinor"], "font": ('Helvetica', 11), "justify": tk.RIGHT}}
-        self.styles["reminder"] = {"x": self.size*.95,    "y": self.rowHeight*.5,   "option": {"anchor": tk.NE,     "fill": self.colors["textMinor"], "font": (LOGOFONT,    12), "justify": tk.RIGHT}}
-        self.styles["edsmLogo"] = {"x": self.size*.90,    "y": self.rowHeight*.5,   "option": {"anchor": tk.NE,     "fill": self.colors["textMinor"], "font": (LOGOFONT,    12), "justify": tk.RIGHT}}
+        self.styles["bulletBG"] =     {"x": self.rowHeight/2, "y": self.rowHeight/2,  "option": {"anchor": tk.CENTER, "fill": self.colors["minor2"],    "font": (LOGOFONT,    12), "justify": tk.CENTER, "text":BULLETBG}}
+        self.styles["bulletFG"] =     {"x": self.rowHeight/2, "y": self.rowHeight/2,  "option": {"anchor": tk.CENTER, "fill": self.colors["minor1"],    "font": (LOGOFONT,    12), "justify": tk.CENTER, "text":BULLETFG}}
+        self.styles["system"] =       {"x": self.rowHeight,   "y": self.rowHeight*.3, "option": {"anchor": tk.W,      "fill": self.colors["textMain"],  "font": ('Helvetica', 12), "justify": tk.LEFT}}
+        self.styles["starType"] =     {"x": self.rowHeight,   "y": self.rowHeight*.7, "option": {"anchor": tk.W,      "fill": self.colors["textMinor"], "font": ('Helvetica', 9),  "justify": tk.LEFT}}
+        self.styles["distance"] =     {"x": self.size*.95,    "y": self.rowHeight*.3, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": ('Helvetica', 11), "justify": tk.RIGHT}}
+        self.styles["reminder"] =     {"x": self.size*.95,    "y": self.rowHeight*.7, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": (LOGOFONT,    20), "justify": tk.RIGHT}}
+        self.styles["edsmLogo"] =     {"x": self.size*.86,    "y": self.rowHeight*.7, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": (LOGOFONT,    20), "justify": tk.RIGHT}}
+        self.styles["thargoidLogo"] = {"x": self.size*.77,    "y": self.rowHeight*.7, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": (LOGOFONT,    20), "justify": tk.RIGHT}}
         self.styles["bottomLine"] = {"x0": self.size*.025,   "x1": self.size*.975,   "y0": self.rowHeight,   "y1": self.rowHeight,   "option": {"fill": self.colors["minor1"], "width": "0.766p"}}
         self.styles["bulletLine"] = {"x0": self.rowHeight/2, "x1": self.rowHeight/2, "y0": self.rowHeight/2, "y1": self.rowHeight/2, "option": {"fill": self.colors["main"],   "width": "1.5p"}}
         self.rowObjs = []
@@ -238,13 +251,9 @@ class FancyBoard(BaseBoard):
             for index in range(len(self.route)):
                 if len(self.rowObjs) != len(self.route):
                     rowObj = {}
-                    rowObj["bulletBG"] = self.canvas.create_text(self.styles["bulletBG"]["x"], self.styles["bulletBG"]["y"]+self.rowHeight*(index), **self.styles["bulletBG"]["option"])
-                    rowObj["bulletFG"] = self.canvas.create_text(self.styles["bulletFG"]["x"], self.styles["bulletFG"]["y"]+self.rowHeight*(index), **self.styles["bulletFG"]["option"])
-                    rowObj["system"] =   self.canvas.create_text(self.styles["system"]["x"],   self.styles["system"]["y"]+self.rowHeight*(index),   **self.styles["system"]["option"])
-                    rowObj["starType"] = self.canvas.create_text(self.styles["starType"]["x"], self.styles["starType"]["y"]+self.rowHeight*(index), **self.styles["starType"]["option"])
-                    rowObj["distance"] = self.canvas.create_text(self.styles["distance"]["x"], self.styles["distance"]["y"]+self.rowHeight*(index), **self.styles["distance"]["option"])
-                    rowObj["reminder"] = self.canvas.create_text(self.styles["reminder"]["x"], self.styles["reminder"]["y"]+self.rowHeight*(index), **self.styles["reminder"]["option"])
-                    rowObj["edsmLogo"] = self.canvas.create_text(self.styles["edsmLogo"]["x"], self.styles["edsmLogo"]["y"]+self.rowHeight*(index), **self.styles["edsmLogo"]["option"])
+                    texts = ["bulletBG", "bulletFG", "system", "starType", "distance", "reminder", "edsmLogo", "thargoidLogo"]
+                    for k in texts:
+                        rowObj[k] = self.canvas.create_text(self.styles[k]["x"], self.styles[k]["y"]+self.rowHeight*(index), **self.styles[k]["option"])
                     self.rowObjs.append(rowObj)
                 else:
                     rowObj = self.rowObjs[index]
@@ -263,6 +272,10 @@ class FancyBoard(BaseBoard):
                 else:
                     self.canvas.itemconfigure(rowObj["edsmLogo"], text=EDSMLOGO)
                     self.canvas.tag_bind(rowObj["edsmLogo"], "<Button-1>", lambda event, url=self.getEDSMUrl(index) : webbrowser.open(url))
+                if self.getID64(index) in self.thargoidSystems:
+                    self.canvas.itemconfigure(rowObj["thargoidLogo"], text=THARGOIDWARLOGO, fill=THARGOIDCOLORS[self.thargoidSystems[self.getID64(index)]])
+                else:
+                    self.canvas.itemconfigure(rowObj["thargoidLogo"], text="")
                 if self.getDistanceText(index) == CURRENT:
                     self.currentIndex = index
                     self.canvas.itemconfigure(rowObj["bulletBG"], fill=self.colors["main"])
