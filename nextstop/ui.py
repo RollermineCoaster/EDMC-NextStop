@@ -126,6 +126,9 @@ class BaseBoard(ABC):
     def getID64(self, index):
         return self.route[index]["id64"]
 
+    def getStateText(self, index):
+        return "State: " + ("Normal" if self.getID64(index) not in self.thargoidSystems else "Thargoid "+self.thargoidSystems[self.getID64(index)])
+
     def resizeCanvas(self, bbox):
         self.canvas.config(scrollregion=bbox)
         #resize the canvas
@@ -152,11 +155,14 @@ class SimpleBoard(BaseBoard):
         super().__init__(frame)
         self.colors = {"danger": "#f00"}
         self.styles = {}
-        self.styles["system"] =     {"x": 0,           "option": {"anchor": tk.NW, "justify": tk.LEFT}}
-        self.styles["starType"] =   {"x": 0,           "option": {"anchor": tk.NW, "justify": tk.LEFT}}
-        self.styles["distance"] =   {"x": self.size,   "option": {"anchor": tk.NE, "justify": tk.RIGHT}}
-        self.styles["reminder"] =   {"x": self.size,   "option": {"anchor": tk.NE, "justify": tk.RIGHT}}
-        self.styles["bottomLine"] = {"x": self.size/2, "option": {"anchor": tk.N,  "justify": tk.CENTER}}
+        self.styles["system"] =       {"x": 0,               "option": {"anchor": tk.NW, "justify": tk.LEFT}}
+        self.styles["starType"] =     {"x": 0,               "option": {"anchor": tk.NW, "justify": tk.LEFT}}
+        self.styles["state"] =        {"x": 0,               "option": {"anchor": tk.NW, "justify": tk.LEFT}}
+        self.styles["distance"] =     {"x": self.size,       "option": {"anchor": tk.NE, "justify": tk.RIGHT}}
+        self.styles["reminder"] =     {"x": self.size,       "option": {"anchor": tk.NE, "justify": tk.RIGHT, "tags": "logo", "font": (LOGOFONT, 20)}}
+        self.styles["edsmLogo"] =     {"x": self.size*.91,   "option": {"anchor": tk.NE, "justify": tk.RIGHT, "tags": "logo", "font": (LOGOFONT, 20)}}
+        self.styles["thargoidLogo"] = {"x": self.size*.82,   "option": {"anchor": tk.NE, "justify": tk.RIGHT, "tags": "logo", "font": (LOGOFONT, 20)}}
+        self.styles["bottomLine"] =   {"x": self.size/2, "option": {"anchor": tk.N,  "justify": tk.CENTER}}
         self.rowObjs = []
         self.updateCanvas()
 
@@ -177,25 +183,40 @@ class SimpleBoard(BaseBoard):
             for index in range(len(self.route)):
                 if len(self.rowObjs) != len(self.route):
                     rowObj = {}
-                    rowObj["system"] =   self.canvas.create_text(self.styles["system"]["x"],   cursorY, **self.styles["system"]["option"])
-                    rowObj["distance"] = self.canvas.create_text(self.styles["distance"]["x"], cursorY, **self.styles["distance"]["option"])
+                    rowObj["system"] =       self.canvas.create_text(self.styles["system"]["x"],           cursorY, **self.styles["system"]["option"])
+                    rowObj["distance"] =     self.canvas.create_text(self.styles["distance"]["x"],         cursorY, **self.styles["distance"]["option"])
                     cursorY += max(getCanvasObjHeight(self.canvas, rowObj["system"]), getCanvasObjHeight(self.canvas, rowObj["distance"]))
-                    rowObj["starType"] = self.canvas.create_text(self.styles["starType"]["x"], cursorY, **self.styles["starType"]["option"])
-                    rowObj["reminder"] = self.canvas.create_text(self.styles["reminder"]["x"], cursorY, **self.styles["reminder"]["option"])
-                    self.canvas.addtag_withtag("logo", rowObj["reminder"])
-                    cursorY += max(getCanvasObjHeight(self.canvas, rowObj["starType"]), getCanvasObjHeight(self.canvas, rowObj["reminder"]))
+                    rowObj["starType"] =     self.canvas.create_text(self.styles["starType"]["x"],         cursorY, **self.styles["starType"]["option"])
+                    rowObj["reminder"] =     self.canvas.create_text(self.styles["reminder"]["x"],         cursorY, **self.styles["reminder"]["option"])
+                    rowObj["edsmLogo"] =     self.canvas.create_text(self.styles["edsmLogo"]["x"],         cursorY, **self.styles["edsmLogo"]["option"])
+                    rowObj["thargoidLogo"] = self.canvas.create_text(self.styles["thargoidLogo"]["x"], cursorY, **self.styles["thargoidLogo"]["option"])
+                    cursorY += getCanvasObjHeight(self.canvas, rowObj["starType"])
+                    rowObj["state"] =        self.canvas.create_text(self.styles["state"]["x"],            cursorY, **self.styles["state"]["option"])
+                    cursorY += getCanvasObjHeight(self.canvas, rowObj["state"])
                     self.rowObjs.append(rowObj)
                 else:
                     rowObj = self.rowObjs[index]
                 self.canvas.itemconfigure(rowObj["system"],   text=str(index+1)+". "+self.getSystemText(index))
                 self.canvas.itemconfigure(rowObj["distance"], text=self.getDistanceText(index))
                 self.canvas.itemconfigure(rowObj["starType"], text=self.getStarTypeText(index))
+                self.canvas.itemconfigure(rowObj["state"],    text=self.getStateText(index))
                 self.canvas.itemconfigure(rowObj["reminder"], text=self.getReminderText(index))
                 if self.getDistanceText(index) == CURRENT:
                     self.currentIndex = index
                 if self.getReminderText(index) == DANGERLOGO:
-                    self.canvas.itemconfigure(rowObj["reminder"])
                     self.canvas.addtag_withtag("danger", rowObj["reminder"])
+                else:
+                    self.canvas.itemconfigure(rowObj["reminder"], tags="logo")
+                if self.getEDSMUrl(index) == "":
+                    self.canvas.itemconfigure(rowObj["edsmLogo"], text="")
+                    self.canvas.tag_unbind(rowObj["edsmLogo"], "<Button-1>")
+                else:
+                    self.canvas.itemconfigure(rowObj["edsmLogo"], text=EDSMLOGO)
+                    self.canvas.tag_bind(rowObj["edsmLogo"], "<Button-1>", lambda event, url=self.getEDSMUrl(index) : webbrowser.open(url))
+                if self.getID64(index) in self.thargoidSystems:
+                    self.canvas.itemconfigure(rowObj["thargoidLogo"], text=THARGOIDWARLOGO)
+                else:
+                    self.canvas.itemconfigure(rowObj["thargoidLogo"], text="")
                 #if not bottom
                 if len(self.rowObjs) != len(self.route):
                     bottomLine = self.canvas.create_text(self.styles["bottomLine"]["x"], cursorY, **self.styles["bottomLine"]["option"])
@@ -207,8 +228,7 @@ class SimpleBoard(BaseBoard):
     def updateTheme(self):
         super().updateTheme()
         self.canvas.itemconfigure("all", fill=theme.current["foreground"], font=theme.current["font"])
-        self.canvas.itemconfigure("logo", font=(LOGOFONT, 12))
-        self.canvas.itemconfigure("danger", fill=self.colors["danger"])
+        self.canvas.itemconfigure("logo", font=(LOGOFONT, 20))
         text = ""
         while getCanvasObjWidth(self.canvas, "line") < self.size:
             text += "-"
@@ -258,14 +278,23 @@ class FancyBoard(BaseBoard):
                 else:
                     rowObj = self.rowObjs[index]
                 self.canvas.itemconfigure(rowObj["system"], **self.styles["system"]["option"], text=str(index+1)+". "+self.getSystemText(index))
-                #make system resize dynamically
-                resizeCanvasText(self.canvas, rowObj["system"], "127p")
                 self.canvas.itemconfigure(rowObj["starType"], text=self.getStarTypeText(index))
                 self.canvas.itemconfigure(rowObj["distance"], **self.styles["distance"]["option"] , text=self.getDistanceText(index))
-                #make distance resize dynamically
+                #make text resize dynamically
+                resizeCanvasText(self.canvas, rowObj["system"], "127p")
+                resizeCanvasText(self.canvas, rowObj["starType"], "116p")
                 resizeCanvasText(self.canvas, rowObj["distance"], "52p")
 
                 self.canvas.itemconfigure(rowObj["reminder"], text=self.getReminderText(index))
+                if self.getDistanceText(index) == CURRENT:
+                    self.currentIndex = index
+                    self.canvas.itemconfigure(rowObj["bulletBG"], fill=self.colors["main"])
+                    self.canvas.itemconfigure(rowObj["bulletFG"], fill=self.colors["main"])
+                else:
+                    self.canvas.itemconfigure(rowObj["bulletBG"], fill=self.colors["minor2"])
+                    self.canvas.itemconfigure(rowObj["bulletFG"], fill=self.colors["minor1"])
+                if self.getReminderText(index) == DANGERLOGO:
+                    self.canvas.itemconfigure(rowObj["reminder"], fill=self.colors["danger"])
                 if self.getEDSMUrl(index) == "":
                     self.canvas.itemconfigure(rowObj["edsmLogo"], text="")
                     self.canvas.tag_unbind(rowObj["edsmLogo"], "<Button-1>")
@@ -276,15 +305,6 @@ class FancyBoard(BaseBoard):
                     self.canvas.itemconfigure(rowObj["thargoidLogo"], text=THARGOIDWARLOGO, fill=THARGOIDCOLORS[self.thargoidSystems[self.getID64(index)]])
                 else:
                     self.canvas.itemconfigure(rowObj["thargoidLogo"], text="")
-                if self.getDistanceText(index) == CURRENT:
-                    self.currentIndex = index
-                    self.canvas.itemconfigure(rowObj["bulletBG"], fill=self.colors["main"])
-                    self.canvas.itemconfigure(rowObj["bulletFG"], fill=self.colors["main"])
-                else:
-                    self.canvas.itemconfigure(rowObj["bulletBG"], fill=self.colors["minor2"])
-                    self.canvas.itemconfigure(rowObj["bulletFG"], fill=self.colors["minor1"])
-                if self.getReminderText(index) == DANGERLOGO:
-                    self.canvas.itemconfigure(rowObj["reminder"], fill=self.colors["danger"])
                 #if not bottom
                 if len(self.rowObjs) != len(self.route):
                     self.canvas.create_line(self.styles["bottomLine"]["x0"], self.styles["bottomLine"]["y0"]+self.rowHeight*(index), self.styles["bottomLine"]["x1"], self.styles["bottomLine"]["y1"]+self.rowHeight*(index), **self.styles["bottomLine"]["option"])
