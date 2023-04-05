@@ -284,8 +284,7 @@ class FancyBoard(BaseBoard):
                 resizeCanvasText(self.canvas, rowObj["system"], "127p")
                 resizeCanvasText(self.canvas, rowObj["starType"], "116p")
                 resizeCanvasText(self.canvas, rowObj["distance"], "52p")
-
-                self.canvas.itemconfigure(rowObj["reminder"], text=self.getReminderText(index))
+                #setup bullet
                 if self.getDistanceText(index) == CURRENT:
                     self.currentIndex = index
                     self.canvas.itemconfigure(rowObj["bulletBG"], fill=self.colors["main"])
@@ -293,14 +292,22 @@ class FancyBoard(BaseBoard):
                 else:
                     self.canvas.itemconfigure(rowObj["bulletBG"], fill=self.colors["minor2"])
                     self.canvas.itemconfigure(rowObj["bulletFG"], fill=self.colors["minor1"])
+                #setup reminder logo
+                self.canvas.itemconfigure(rowObj["reminder"], text=self.getReminderText(index))
                 if self.getReminderText(index) == DANGERLOGO:
                     self.canvas.itemconfigure(rowObj["reminder"], fill=self.colors["danger"])
+                #setup edsm logo
                 if self.getEDSMUrl(index) == "":
                     self.canvas.itemconfigure(rowObj["edsmLogo"], text="")
                     self.canvas.tag_unbind(rowObj["edsmLogo"], "<Button-1>")
+                    self.canvas.tag_unbind(rowObj["edsmLogo"], "<Enter>")
+                    self.canvas.tag_unbind(rowObj["edsmLogo"], "<Leave>")
                 else:
                     self.canvas.itemconfigure(rowObj["edsmLogo"], text=EDSMLOGO)
                     self.canvas.tag_bind(rowObj["edsmLogo"], "<Button-1>", lambda event, url=self.getEDSMUrl(index) : webbrowser.open(url))
+                    self.canvas.tag_bind(rowObj["edsmLogo"], "<Enter>", lambda event: self.canvas.config(cursor="hand2"))
+                    self.canvas.tag_bind(rowObj["edsmLogo"], "<Leave>", lambda event: self.canvas.config(cursor=""))
+                #setup thargoid logo
                 if self.getID64(index) in self.thargoidSystems:
                     self.canvas.itemconfigure(rowObj["thargoidLogo"], text=THARGOIDWARLOGO, fill=THARGOIDCOLORS[self.thargoidSystems[self.getID64(index)]])
                 else:
