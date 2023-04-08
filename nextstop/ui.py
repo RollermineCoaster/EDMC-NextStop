@@ -210,9 +210,13 @@ class SimpleBoard(BaseBoard):
                 if self.getEDSMUrl(index) == "":
                     self.canvas.itemconfigure(rowObj["edsmLogo"], text="")
                     self.canvas.tag_unbind(rowObj["edsmLogo"], "<Button-1>")
+                    self.canvas.tag_unbind(rowObj["edsmLogo"], "<Enter>")
+                    self.canvas.tag_unbind(rowObj["edsmLogo"], "<Leave>")
                 else:
                     self.canvas.itemconfigure(rowObj["edsmLogo"], text=EDSMLOGO)
                     self.canvas.tag_bind(rowObj["edsmLogo"], "<Button-1>", lambda event, url=self.getEDSMUrl(index) : webbrowser.open(url))
+                    self.canvas.tag_bind(rowObj["edsmLogo"], "<Enter>", lambda event: self.canvas.config(cursor="hand2"))
+                    self.canvas.tag_bind(rowObj["edsmLogo"], "<Leave>", lambda event: self.canvas.config(cursor=""))
                 if self.getID64(index) in self.thargoidSystems:
                     self.canvas.itemconfigure(rowObj["thargoidLogo"], text=THARGOIDWARLOGO)
                 else:
