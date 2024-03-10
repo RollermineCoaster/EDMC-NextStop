@@ -238,7 +238,7 @@ class SimpleBoard(BaseBoard):
         self.canvas.itemconfigure("all", fill=theme.current["foreground"], font=theme.current["font"])
         self.canvas.itemconfigure("logo", font=(LOGOFONT, 20))
         text = ""
-        while getCanvasObjWidth(self.canvas, "line") < self.size:
+        while len(self.route) > 0 and getCanvasObjWidth(self.canvas, "line") < self.size:
             text += "-"
             self.canvas.itemconfigure("line", text=text)
 

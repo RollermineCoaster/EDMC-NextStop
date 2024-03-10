@@ -123,15 +123,17 @@ class NextStop:
         config.set('nextStop_Mode', mode)
         if mode == self.SIMPLEMODE and not isinstance(self.ui, SimpleBoard) or mode == self.FANCYMODE and not isinstance(self.ui, FancyBoard):
             logger.info("Removing old board.")
-            #get route and current pos from old board
+            #get route, current pos and thargoid systems from old board
             route = self.getRoute()
             currentPos = self.getCurrentPos()
+            thargoidSystems = self.getThargoidSystems()
             #destory old board
             self.ui.destroy()
             #make a new board
             self.createBoard()
             self.setRoute(route)
             self.setCurrentPos(currentPos)
+            self.setThargoidSystems(thargoidSystems)
             self.ui.updateCanvas()
         self.ui.updateTheme()
 
