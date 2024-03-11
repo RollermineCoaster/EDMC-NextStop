@@ -43,6 +43,9 @@ BULLETFG =        "\uF10C"
 
 #string
 CURRENT = "CURRENT"
+DANGER = "Danger"
+FUELSTAR = "Fuel Star"
+OPENEDSM = "Open EDSM"
 
 class BaseBoard(ABC):
 
@@ -132,7 +135,7 @@ class BaseBoard(ABC):
         return self.route[index]["id64"]
 
     def getStateText(self, index):
-        return "State: " + ("Normal" if self.getID64(index) not in self.thargoidSystems else "Thargoid "+self.thargoidSystems[self.getID64(index)])
+        return ("Normal" if self.getID64(index) not in self.thargoidSystems else "Thargoid "+self.thargoidSystems[self.getID64(index)])
 
     def resizeCanvas(self, bbox):
         self.canvas.config(scrollregion=bbox)
@@ -203,7 +206,7 @@ class SimpleBoard(BaseBoard):
                 self.canvas.itemconfigure(rowObj["system"],   text=str(index+1)+". "+self.getSystemText(index))
                 self.canvas.itemconfigure(rowObj["distance"], text=self.getDistanceText(index))
                 self.canvas.itemconfigure(rowObj["starType"], text=self.getStarTypeText(index))
-                self.canvas.itemconfigure(rowObj["state"],    text=self.getStateText(index))
+                self.canvas.itemconfigure(rowObj["state"],    text="State: "+self.getStateText(index))
                 self.canvas.itemconfigure(rowObj["reminder"], text=self.getReminderText(index))
                 if self.getDistanceText(index) == CURRENT:
                     self.currentIndex = index
@@ -262,9 +265,47 @@ class FancyBoard(BaseBoard):
         self.styles["bottomLine"] = {"type": "line", "x0": self.size*.025,   "x1": self.size*.975,   "y0": self.rowHeight,   "y1": self.rowHeight,   "option": {"fill": self.colors["minor1"], "width": "0.766p"}}
         self.styles["bulletLine"] = {"type": "line", "x0": self.rowHeight/2, "x1": self.rowHeight/2, "y0": self.rowHeight/2, "y1": self.rowHeight/2, "option": {"fill": self.colors["main"],   "width": "1.5p"}}
         self.rowObjs = []
+        #tooltips
+        self.tooltipsVar = tk.StringVar()
+        self.tooltipsObj = tk.Label(self.canvas, fg=self.colors["textMinor"], bg=self.colors["bg"], relief=tk.RAISED, bd=1, font=('Helvetica', 9), textvariable=self.tooltipsVar)
+        self.tooltips = None
         self.canvas.config(bg=self.colors["bg"])
         self.updateCanvas()
 
+    def setHoverEvent(self, objID, cursor, text):
+        self.canvas.tag_bind(objID, "<Enter>", lambda event: self.canvas.config(cursor=cursor))
+        self.canvas.tag_bind(objID, "<Enter>", lambda event: self.showTooltips(event.x, event.y, text), "+")
+        self.canvas.tag_bind(objID, "<Leave>", lambda event: self.canvas.config(cursor=""))
+        self.canvas.tag_bind(objID, "<Leave>", lambda event: self.hideTooltips(), "+")
+    
+    def removeHoverEvent(self, objID):
+        self.canvas.tag_unbind(objID, "<Enter>")
+        self.canvas.tag_unbind(objID, "<Leave>")
+
+    def showTooltips(self, x, y, text):    
+        self.tooltipsVar.set(text)
+        self.canvas.itemconfigure("tooltips", state=tk.NORMAL)
+        self.canvas.moveto("tooltips", self.canvas.canvasx(x), self.canvas.canvasy(y))
+        bbox = self.canvas.bbox("tooltips")
+        xOffset = 0
+        yOffset = self.canvas.winfo_fpixels("5p")
+        if bbox[0] < 0:
+            xOffset -= bbox[0]
+        if bbox[1] < 0:
+            yOffset -= bbox[1]
+        if bbox[2] > self.size:
+            xOffset -= bbox[2]-self.size
+        totalRow = max(len(self.route), 1)
+        if bbox[3]+yOffset > self.rowHeight*totalRow:
+            yOffset = -(yOffset+bbox[3]-bbox[1])
+        self.canvas.move("tooltips", xOffset, yOffset)
+        
+    def hideTooltips(self):
+        if self.tooltips:
+            self.tooltips.destroy()
+        self.tooltipsVar.set("")
+        self.canvas.itemconfigure("tooltips", state=tk.HIDDEN)
+    
     def updateCanvas(self):
         #if no route
         if len(self.route) <= 0:
@@ -275,6 +316,7 @@ class FancyBoard(BaseBoard):
         else:
             if len(self.rowObjs) != len(self.route):
                 self.canvas.delete("all")
+                self.canvas.create_window(0, 0, tags="tooltips", window=self.tooltipsObj, state=tk.HIDDEN)
                 self.rowObjs = []
                 self.canvas.create_line(self.styles["bulletLine"]["x0"], self.styles["bulletLine"]["y0"], self.styles["bulletLine"]["x1"], self.styles["bulletLine"]["y1"]+self.rowHeight*(len(self.route)-1), **self.styles["bulletLine"]["option"])
             #loop through route list
@@ -303,25 +345,30 @@ class FancyBoard(BaseBoard):
                     self.canvas.itemconfigure(rowObj["bulletBG"], fill=self.colors["minor2"])
                     self.canvas.itemconfigure(rowObj["bulletFG"], fill=self.colors["minor1"])
                 #setup reminder logo
-                self.canvas.itemconfigure(rowObj["reminder"], text=self.getReminderText(index))
-                if self.getReminderText(index) == DANGERLOGO:
+                reminderText = self.getReminderText(index)
+                self.canvas.itemconfigure(rowObj["reminder"], text=reminderText)
+                if reminderText == DANGERLOGO:
                     self.canvas.itemconfigure(rowObj["reminder"], fill=DANGERCOLOR)
+                    self.setHoverEvent(rowObj["reminder"], "", DANGER)
+                elif reminderText == FUELSTARLOGO:
+                    self.canvas.itemconfigure(rowObj["reminder"], fill=self.colors["textMinor"])
+                    self.setHoverEvent(rowObj["reminder"], "", FUELSTAR)
                 #setup edsm logo
                 if self.getEDSMUrl(index) == "":
                     self.canvas.itemconfigure(rowObj["edsmLogo"], text="")
                     self.canvas.tag_unbind(rowObj["edsmLogo"], "<Button-1>")
-                    self.canvas.tag_unbind(rowObj["edsmLogo"], "<Enter>")
-                    self.canvas.tag_unbind(rowObj["edsmLogo"], "<Leave>")
+                    self.removeHoverEvent(rowObj["edsmLogo"])
                 else:
                     self.canvas.itemconfigure(rowObj["edsmLogo"], text=EDSMLOGO)
                     self.canvas.tag_bind(rowObj["edsmLogo"], "<Button-1>", lambda event, url=self.getEDSMUrl(index) : webbrowser.open(url))
-                    self.canvas.tag_bind(rowObj["edsmLogo"], "<Enter>", lambda event: self.canvas.config(cursor="hand2"))
-                    self.canvas.tag_bind(rowObj["edsmLogo"], "<Leave>", lambda event: self.canvas.config(cursor=""))
+                    self.setHoverEvent(rowObj["edsmLogo"], "hand2", OPENEDSM)
                 #setup thargoid logo
                 if self.getID64(index) in self.thargoidSystems:
                     self.canvas.itemconfigure(rowObj["thargoidLogo"], text=THARGOIDWARLOGO, fill=THARGOIDCOLORS[self.thargoidSystems[self.getID64(index)]])
+                    self.setHoverEvent(rowObj["thargoidLogo"], "", self.getStateText(index))
                 else:
                     self.canvas.itemconfigure(rowObj["thargoidLogo"], text="")
+                    self.removeHoverEvent(rowObj["thargoidLogo"])
                 #if not bottom
                 if len(self.rowObjs) != len(self.route):
                     self.canvas.create_line(self.styles["bottomLine"]["x0"], self.styles["bottomLine"]["y0"]+self.rowHeight*(index), self.styles["bottomLine"]["x1"], self.styles["bottomLine"]["y1"]+self.rowHeight*(index), **self.styles["bottomLine"]["option"])
