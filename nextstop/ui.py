@@ -22,10 +22,10 @@ AddFontResourceEx(join(os.path.dirname(__file__), 'assets/nextstop-logo.ttf'), F
 import logging
 
 logger = logging.getLogger(f"{appname}.EDMC-NextStop")
-#star type
-SCOOPABLE = ["O","B","A","F","G","K","M"]
+#Scoopable
+SCOOPABLE_STARS = ["O","B","A","F","G","K","M"]
 #white dwarfs, neutron stars, black holes
-DANGER = ["D","N","H"]
+DANGER_STARS = ["D", "DA", "DAB", "DAO", "DAZ", "DAV", "DB", "DBV", "DBZ", "DC", "DCV", "DO", "DOV", "DQ", "DX", "N", "H", "SupermassiveBlackHole"]
 
 #color
 DANGERCOLOR = "#F00"
@@ -88,25 +88,67 @@ class BaseBoard(ABC):
             return name
         starClass = self.route[index]["starClass"]
         match starClass:
+            #* mean uncertain because NavRoute didn't have that info
+            #Scoopable
+            case "O":
+                return f"O (Blue-White) Star"
+            case "B" | "A":
+                return f"{starClass} (Blue-White*) Star"
+            case "F":
+                return "F (White*) Star"
+            case "G":
+                return "G (White-Yellow*) Star"
+            case "K":
+                return "K (Yellow-Orange*) Star"
+            case "M":
+                return "M (Red*) Star"
+            #case "B_BlueWhiteSuperGiant" | "A_BlueWhiteSuperGiant":
+                #return f"{starClass[0]} (Blue-White super giant) Star"
+            #case "F_WhiteSuperGiant":
+                #return "F (White super giant) Star"
+            #case "G_WhiteSuperGiant":
+                #return "G (White-Yellow super giant)"
+            #case "K_OrangeGiant":
+                #return "K (Yellow-Orange giant) Star"
+            #case "M_RedGiant":
+                #return "M (Red giant) Star"
+            #case "M_RedSuperGiant":
+                #return "M (Red super giant) Star"
+            
+            #Brown Dwarfs
             case "L" | "T" | "Y":
                 return f"{starClass} (Brown dwarf) Star"
+            
+            #Proto-stars
             case "TTS":
                 return "T Tauri Star"
             case "AeBe":
                 return "Herbig Ae/Be Star"
-            case "W" | "WN" | "WNC" | "WC" | "WO":
-                text = starClass.replace("W", " ")
-                return f"Wolf-Rayet{text} Star"
+            
+            #Wolf-Rayet
+            case "W":
+                return f"Wolf-Rayet Star"
+            case "WN" | "WNC" | "WC" | "WO":
+                text = starClass.replace("W", "")
+                return f"Wolf-Rayet {text} Star"
+            
+            #Rare
             case "MS" | "S":
                 return f"{starClass}-type Star"
-            case "D":
+            
+            #White Dwarfs
+            case "D" | "DA" | "DAB" | "DAO" | "DAZ" | "DAV" | "DB" | "DBV" | "DBZ" | "DC" | "DCV" | "DO" | "DOV" | "DQ" | "DX":
                 return f"White Dwarf ({starClass}) Star"
+            
+            #Others
             case "N":
                 return "Neutron Star"
             case "H":
                 return "Black Hole"
             case "SupermassiveBlackHole":
                 return "Supermassive Black Hole"
+            
+            #Default
             case _:
                 return f"{starClass} Star"
 
@@ -121,10 +163,10 @@ class BaseBoard(ABC):
 
     def getReminderText(self, index):
         #if scoopable
-        if self.route[index]["starClass"][0] in SCOOPABLE:
+        if self.route[index]["starClass"] in SCOOPABLE_STARS:
             return FUELSTARLOGO
         #if danger
-        elif self.route[index]["starClass"][0] in DANGER:
+        elif self.route[index]["starClass"] in DANGER_STARS:
             return DANGERLOGO
         else:
             return ""
