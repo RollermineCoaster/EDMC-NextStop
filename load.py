@@ -91,37 +91,37 @@ class NextStop:
 
     def getRoute(self):
         if not self.ui:
-            logger.info("Failed to getRoute! UI module is None.")
+            logger.error("Failed to getRoute! UI module is None.")
         else:
             return self.ui.getRoute()
 
     def setRoute(self, route):
         if not self.ui:
-            logger.info("Failed to setRoute! UI module is None.")
+            logger.error("Failed to setRoute! UI module is None.")
         else:
             self.ui.setRoute(route)
 
     def getThargoidSystems(self):
         if not self.ui:
-            logger.info("Failed to getThargoidSystems! UI module is None.")
+            logger.error("Failed to getThargoidSystems! UI module is None.")
         else:
             return self.ui.getThargoidSystems()
 
     def setThargoidSystems(self, thargoidSystems):
         if not self.ui:
-            logger.info("Failed to setThargoidSystems! UI module is None.")
+            logger.error("Failed to setThargoidSystems! UI module is None.")
         else:
             self.ui.setThargoidSystems(thargoidSystems)
 
     def getCurrentPos(self):
         if not self.ui:
-            logger.info("Failed to getCurrentPos! UI module is None.")
+            logger.error("Failed to getCurrentPos! UI module is None.")
         else:
             return self.ui.getCurrentPos()
 
     def setCurrentPos(self, currentPos):
         if not self.ui:
-            logger.info("Failed to setCurrentPos! UI module is None.")
+            logger.error("Failed to setCurrentPos! UI module is None.")
         else:
             self.ui.setCurrentPos(currentPos)
 
@@ -170,7 +170,7 @@ class NextStop:
         mode = self.mode.get()
         config.set('nextStop_Mode', mode)
         if mode == self.SIMPLEMODE and not isinstance(self.ui, SimpleBoard) or mode == self.FANCYMODE and not isinstance(self.ui, FancyBoard):
-            logger.info("Removing old board.")
+            logger.info("Updating board with new settings.")
             #get route, current pos and thargoid systems from old board
             route = self.getRoute()
             currentPos = self.getCurrentPos()
@@ -192,7 +192,7 @@ class NextStop:
         :param parent: EDMC main window Tk
         :return: Our frame
         """
-        logger.info("Setting up UI")
+        logger.info("Setting up UI.")
         #plugin frame
         self.frame = tk.Frame(parent)
         #bing a custom event to canvas for updateCanvas
@@ -202,10 +202,10 @@ class NextStop:
 
     def createBoard(self):
         if self.mode.get() == self.SIMPLEMODE:
-            logger.info("Display in simple mode")
+            logger.info("Display in simple mode.")
             self.ui = SimpleBoard(self.frame)
         elif self.mode.get() == self.FANCYMODE:
-            logger.info("Display in fancy mode")
+            logger.info("Display in fancy mode.")
             self.ui = FancyBoard(self.frame)
 
     def onEvent(self, cmdr: str, is_beta: bool, system: str, station: str, entry: dict, state: dict) -> Optional[str]:
@@ -225,7 +225,6 @@ class NextStop:
                 temp["starClass"] = dest["StarClass"]
                 route.append(temp)
             logger.debug("Route: "+str(route))
-            logger.debug('Starting worker thread...')
             self.setRoute(route)
             self.setCurrentPos(state["StarPos"])
             self.ui.updateCanvas()
@@ -233,10 +232,11 @@ class NextStop:
             self.stopWorker.set()
             self.stopWorker.clear()
             #get info from EDSM using thread
+            logger.info('Starting worker thread.')
             thread = Thread(target=EDSMworker, name='EDSM worker')
             thread.daemon = True
             thread.start()
-            logger.debug('Done.')
+            logger.debug('NavRoute event handled.')
         elif entry["event"] == "NavRouteClear":
             logger.info("Route clear! Updating UI.")
             if not self.ui.jumping:
@@ -244,10 +244,10 @@ class NextStop:
                 self.setRoute([])
                 self.ui.updateCanvas()
         elif entry["event"] == "StartJump" and entry["JumpType"] == "Hyperspace":
-            logger.info("Jumping to another system!")
+            logger.info("Jumping to another system.")
             self.ui.jumping = True
         elif entry["event"] == "FSDJump":
-            logger.info("Arrived at another system! Updating current position.")
+            logger.info("Arrived at another system. Updating current position.")
             self.ui.jumping = False
             #update current pos
             self.setCurrentPos(entry["StarPos"])
@@ -262,7 +262,7 @@ def EDSMworker() -> None:
         appRoute = app.getRoute()
         #if no route
         if len(appRoute) <= 0:
-            logger.debug("No route! Worker end!")
+            logger.info("No route! Worker end!")
             return
         #copy the route list
         route = copy.deepcopy(appRoute)
@@ -306,7 +306,7 @@ def EDSMworker() -> None:
                             app.updateCache(id64, starType)
                     break
                 case 429:
-                    logger.error(f"Too Many Requests! Try again in after {limitReset} sec!")
+                    logger.error(f"Too Many Requests! Try again in {limitReset} sec!")
                     if limitReset > 0:
                         waitSec = limitReset - int(time.time()) if limitReset > 1000000000 else limitReset
                         if app.stopWorker.wait(timeout=waitSec): return
