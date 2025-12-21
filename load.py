@@ -6,10 +6,12 @@ It shows information about every star system in your route.
 import logging
 import tkinter as tk
 from typing import Optional
-from threading import Thread
+from threading import Thread, RLock, Event
 import time
 import requests
 import copy
+import json
+from os import path
 
 from nextstop.util import getDistance
 from nextstop.ui import *
@@ -19,6 +21,8 @@ from config import appname, config
 
 # This **MUST** match the name of the folder the plugin is in.
 PLUGIN_NAME = "EDMC-NextStop"
+
+CACHE_LIMIT = 2000
 
 logger = logging.getLogger(f"{appname}.{PLUGIN_NAME}")
 
@@ -42,7 +46,48 @@ class NextStop:
         thread = Thread(target=DCoHWorker, name='DCoH worker')
         thread.daemon = True
         thread.start()
+        #thread lock for cache
+        self.cacheLock = RLock()
+        #kill switch for worker
+        self.stopWorker = Event()
+        #cache
+        pluginDir = path.join(config.plugin_dir, PLUGIN_NAME)
+        self.cachePath = path.join(pluginDir, "system_cache.json")
+        self.systemCache = {}
+        self.loadCache()
         logger.info("NextStop instantiated")
+
+    def getFromCache(self, id64):
+        with self.cacheLock:
+            starType = self.systemCache.get(str(id64), "")
+            if starType:
+                self.updateCache(id64, starType)
+            return starType
+
+    def updateCache(self, id64, starType):
+        with self.cacheLock:
+            key = str(id64)
+            self.systemCache.pop(key, "")
+            self.systemCache[key] = starType
+            if len(self.systemCache) > 0 and len(self.systemCache) > CACHE_LIMIT:
+                firstKey = next(iter(self.systemCache))
+                del self.systemCache[firstKey]
+
+    def loadCache(self):
+        try:
+            if path.exists(self.cachePath):
+                with open(self.cachePath, "r") as file:
+                    self.systemCache = json.load(file)
+        except Exception as e:
+            logger.error(f"Failed to load system cache! {e}")
+
+    def saveCache(self):
+        try:
+            with self.cacheLock:
+                with open(self.cachePath, "w") as file:
+                    json.dump(self.systemCache, file)
+        except Exception as e:
+            logger.error(f"Failed to save system cache! {e}")
 
     def getRoute(self):
         if not self.ui:
@@ -93,7 +138,9 @@ class NextStop:
         on_unload is called by plugin_stop below.
         It is the last thing called before EDMC shuts down. Note that blocking code here will hold the shutdown process.
         """
+        self.stopWorker.set() #stop all EDSM worker
         self.on_preferences_closed("", False)  # Save our prefs
+        self.saveCache()
 
     def setup_preferences(self, parent: nb.Notebook, cmdr: str, is_beta: bool) -> Optional[tk.Frame]:
         """
@@ -149,7 +196,7 @@ class NextStop:
         #plugin frame
         self.frame = tk.Frame(parent)
         #bing a custom event to canvas for updateCanvas
-        self.frame.bind_all('<<EDSMUpdate>>', lambda event : self.ui.updateCanvas())
+        self.frame.bind('<<EDSMUpdate>>', lambda event : self.ui.updateCanvas())
         self.createBoard()
         return self.frame
 
@@ -182,6 +229,9 @@ class NextStop:
             self.setRoute(route)
             self.setCurrentPos(state["StarPos"])
             self.ui.updateCanvas()
+            #stop all EDSM worker
+            self.stopWorker.set()
+            self.stopWorker.clear()
             #get info from EDSM using thread
             thread = Thread(target=EDSMworker, name='EDSM worker')
             thread.daemon = True
@@ -209,53 +259,68 @@ def EDSMworker() -> None:
         url = "https://www.edsm.net/api-v1/systems"
         logger.debug("URL: "+url)
         param = {"showId":1, "showPrimaryStar":1, "systemName":[]}
+        appRoute = app.getRoute()
         #if no route
-        if len(app.getRoute()) <= 0:
+        if len(appRoute) <= 0:
             logger.debug("No route! Worker end!")
             return
         #copy the route list
-        route = copy.deepcopy(app.getRoute())
+        route = copy.deepcopy(appRoute)
         #list of the route using SystemName as key and index as value
-        routeIDs = {}
+        routeIndexs = {}
+        queryCount = 0
         for i in range(len(route)):
-            systemName = route[i]["system"]
-            param["systemName"].append(systemName)
-            routeIDs[systemName] = i
-        logger.debug("Param: "+str(param))
-        while True:
+            if app.stopWorker.is_set(): return
+            id64 = route[i]["id64"]
+            starType = app.getFromCache(id64)
+            if not starType:
+                systemName = route[i]["system"]
+                param["systemName"].append(systemName)
+                routeIndexs[systemName] = i
+                queryCount+=1
+            else:
+                route[i]["starTypeName"] = starType
+                route[i]["edsmUrl"] = f"https://www.edsm.net/en/system?systemID64={id64}"
+        logger.debug(f"{len(route)-queryCount} cached, query {queryCount}")
+        while queryCount > 0:
+            if app.stopWorker.is_set(): return
+            logger.debug("Param: "+str(param))
             #get info using the url above
-            req = requests.post(url, json=param)
+            req = requests.post(url, json=param, timeout=(5, 30))
             limitReset = int(req.headers.get('X-Rate-Limit-Reset', "") or -1)
             match req.status_code:
                 case requests.codes.ok:
+                    data = req.json()
+                    logger.debug("Data: "+str(data))
+                    for row in data:
+                        if app.stopWorker.is_set(): return
+                        systemName = row.get("name", "")
+                        routeIndex = routeIndexs.get(systemName, -1)
+                        if routeIndex < 0:
+                            continue
+                        id64 = route[routeIndex]["id64"]
+                        if id64 == row.get("id64", 0):
+                            starType = row.get("primaryStar", {}).get("type", "")
+                            route[routeIndex]["starTypeName"] = starType
+                            route[routeIndex]["edsmUrl"] = f"https://www.edsm.net/en/system?systemID64={id64}"
+                            app.updateCache(id64, starType)
                     break
                 case 429:
                     logger.error(f"Too Many Requests! Try again in after {limitReset} sec!")
                     if limitReset > 0:
                         waitSec = limitReset - int(time.time()) if limitReset > 1000000000 else limitReset
-                        time.sleep(waitSec)
+                        if app.stopWorker.wait(timeout=waitSec): return
                         continue
                     else:
                         logger.error("Invalid X-Rate-Limit-Reset value!")
-                case _:
-                    logger.error("Request not ok! Code: "+str(req.status_code))
+            logger.error("Request not ok! Code: "+str(req.status_code))
             return
-        data = req.json()
-        logger.debug("Data: "+str(data))
-        for row in data:
-            systemName = row.get("name", "")
-            routeID = routeIDs.get(systemName, -1)
-            if routeID < 0:
-                continue
-            systemID = route[routeID]["id64"]
-            if systemID == row.get("id64", 0):
-                route[routeID]["starTypeName"] = row.get("primaryStar", {}).get("type", "")
-                route[routeID]["edsmUrl"] = f"https://www.edsm.net/en/system?systemID64={systemID}"
         logger.debug("Route after update: "+str(route))
         app.setRoute(route)
         app.frame.event_generate('<<EDSMUpdate>>', when="tail")
+        app.saveCache()
     except Exception as e:
-        logger.error(type(e).__name__+e.args)
+        logger.error(f"{type(e).__name__}{e}")
 
 def DCoHWorker() -> None:
     try:
@@ -275,7 +340,7 @@ def DCoHWorker() -> None:
         app.setThargoidSystems(thargoidSystems)
         app.frame.event_generate('<<EDSMUpdate>>', when="tail")
     except Exception as e:
-        logger.error(type(e).__name__+e.args)
+        logger.error(f"{type(e).__name__}{e}")
 
 app = NextStop()
 
