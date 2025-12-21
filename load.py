@@ -202,7 +202,7 @@ def EDSMworker() -> None:
         logger.debug("Worker starting.")
         url = "https://www.edsm.net/api-v1/systems"
         logger.debug("URL: "+url)
-        param = {"showPrimaryStar":1, "systemName":[]}
+        param = {"showId":1, "showPrimaryStar":1, "systemName":[]}
         #if no route
         if len(app.getRoute()) <= 0:
             logger.debug("No route! Worker end!")
@@ -223,9 +223,11 @@ def EDSMworker() -> None:
         data = req.json()
         logger.debug("Data: "+str(data))
         for row in data:
-            routeID = routeIDs[row["name"]]
-            route[routeID]["starTypeName"] = row["primaryStar"]["type"] if "type" in row["primaryStar"] else ""
-            route[routeID]["edsmUrl"] = "https://www.edsm.net/en/system?systemID64="+str(route[routeID]["id64"])
+            routeID = routeIDs[row.get("name", "")]
+            systemID = route[routeID]["id64"]
+            if systemID == row.get("id64", 0):
+                route[routeID]["starTypeName"] = row.get("primaryStar", []).get("type", "")
+                route[routeID]["edsmUrl"] = "https://www.edsm.net/en/system?systemID64="+str(systemID)
         logger.debug("Route after update: "+str(route))
         app.setRoute(route)
         app.frame.event_generate('<<EDSMUpdate>>', when="tail")
