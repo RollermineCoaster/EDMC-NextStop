@@ -87,27 +87,28 @@ class BaseBoard(ABC):
         if name != "":
             return name
         starClass = self.route[index]["starClass"]
-        if starClass == "L" or starClass == "T" or starClass == "Y":
-            return f"{starClass} (Brown dwarf) Star"
-        elif starClass == "TTS":
-            return "T Tauri Star"
-        elif starClass == "AeBe":
-            return "Herbig Ae/Be Star"
-        elif starClass[0] == "W":
-            text = starClass.replace("W", " ")
-            return f"Wolf-Rayet{text} Star"
-        elif starClass == "MS" or starClass == "S":
-            return f"{starClass}-type Star"
-        elif starClass[0] == "D":
-            return f"White Dwarf ({starClass}) Star"
-        elif starClass == "N":
-            return "Neutron Star"
-        elif starClass == "H":
-            return "Black Hole"
-        elif starClass == "SupermassiveBlackHole":
-            return "Supermassive Black Hole"
-        else:
-            return f"{starClass} Star"
+        match starClass:
+            case "L" | "T" | "Y":
+                return f"{starClass} (Brown dwarf) Star"
+            case "TTS":
+                return "T Tauri Star"
+            case "AeBe":
+                return "Herbig Ae/Be Star"
+            case "W" | "WN" | "WNC" | "WC" | "WO":
+                text = starClass.replace("W", " ")
+                return f"Wolf-Rayet{text} Star"
+            case "MS" | "S":
+                return f"{starClass}-type Star"
+            case "D":
+                return f"White Dwarf ({starClass}) Star"
+            case "N":
+                return "Neutron Star"
+            case "H":
+                return "Black Hole"
+            case "SupermassiveBlackHole":
+                return "Supermassive Black Hole"
+            case _:
+                return f"{starClass} Star"
 
     def getDistanceText(self, index):
         #get distance
