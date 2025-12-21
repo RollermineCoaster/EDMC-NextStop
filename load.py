@@ -189,11 +189,16 @@ class NextStop:
             logger.debug('Done.')
         elif entry["event"] == "NavRouteClear":
             logger.info("Route clear! Updating UI.")
-            #clear route list
-            self.setRoute([])
-            self.ui.updateCanvas()
+            if not self.ui.jumping:
+                #clear route list
+                self.setRoute([])
+                self.ui.updateCanvas()
+        elif entry["event"] == "StartJump" and entry["JumpType"] == "Hyperspace":
+            logger.info("Jumping to another system!")
+            self.ui.jumping = True
         elif entry["event"] == "FSDJump":
             logger.info("Arrived at another system! Updating current position.")
+            self.ui.jumping = False
             #update current pos
             self.setCurrentPos(entry["StarPos"])
             self.ui.updateCanvas()

@@ -54,6 +54,7 @@ class BaseBoard(ABC):
         self.thargoidSystems= {}
         self.currentIndex = 0
         self.currentPos = [0.0, 0.0, 0.0]
+        self.jumping = False
         self.size = frame.winfo_fpixels("225p")
         #create canvas
         self.canvas = tk.Canvas(frame, width=self.size, height=0, bd=0, highlightthickness=0)
