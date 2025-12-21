@@ -7,6 +7,7 @@ import logging
 import tkinter as tk
 from typing import Optional
 from threading import Thread
+import time
 import requests
 import copy
 
@@ -216,18 +217,35 @@ def EDSMworker() -> None:
             param["systemName"].append(systemName)
             routeIDs[systemName] = i
         logger.debug("Param: "+str(param))
-        #get info using the url above
-        req = requests.post(url, json=param)
-        if not req.status_code == requests.codes.ok:
-            logger.error("Request not ok! Code: "+str(req.status_code))
+        while True:
+            #get info using the url above
+            req = requests.post(url, json=param)
+            limitReset = int(req.headers.get('X-Rate-Limit-Reset', "") or -1)
+            match req.status_code:
+                case requests.codes.ok:
+                    break
+                case 429:
+                    logger.error(f"Too Many Requests! Try again in after {limitReset} sec!")
+                    if limitReset > 0:
+                        waitSec = limitReset - int(time.time()) if limitReset > 1000000000 else limitReset
+                        time.sleep(waitSec)
+                        continue
+                    else:
+                        logger.error("Invalid X-Rate-Limit-Reset value!")
+                case _:
+                    logger.error("Request not ok! Code: "+str(req.status_code))
+            return
         data = req.json()
         logger.debug("Data: "+str(data))
         for row in data:
-            routeID = routeIDs[row.get("name", "")]
+            systemName = row.get("name", "")
+            routeID = routeIDs.get(systemName, -1)
+            if routeID < 0:
+                continue
             systemID = route[routeID]["id64"]
             if systemID == row.get("id64", 0):
-                route[routeID]["starTypeName"] = row.get("primaryStar", []).get("type", "")
-                route[routeID]["edsmUrl"] = "https://www.edsm.net/en/system?systemID64="+str(systemID)
+                route[routeID]["starTypeName"] = row.get("primaryStar", {}).get("type", "")
+                route[routeID]["edsmUrl"] = f"https://www.edsm.net/en/system?systemID64={systemID}"
         logger.debug("Route after update: "+str(route))
         app.setRoute(route)
         app.frame.event_generate('<<EDSMUpdate>>', when="tail")
