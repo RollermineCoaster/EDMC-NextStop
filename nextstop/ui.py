@@ -47,6 +47,8 @@ DANGER = "Danger"
 FUELSTAR = "Fuel Star"
 OPENEDSM = "Open EDSM"
 
+SIZE = "225p"
+
 class BaseBoard(ABC):
 
     def __init__(self, frame):
@@ -55,12 +57,20 @@ class BaseBoard(ABC):
         self.currentIndex = 0
         self.currentPos = [0.0, 0.0, 0.0]
         self.jumping = False
-        self.size = frame.winfo_fpixels("225p")
+        self.size = frame.winfo_fpixels(SIZE)
+        self.styles = {}
+        self.rowObjs = []
         #create canvas
         self.canvas = tk.Canvas(frame, width=self.size, height=0, bd=0, highlightthickness=0)
         self.canvas.grid()
         #make canvas scrollable (1 scroll in Windows equal 120)
         self.canvas.bind('<MouseWheel>', lambda event : self.canvas.yview_scroll(int(-1*(event.delta/120)), tk.UNITS))
+
+        #try resize canvas when plugin frame changing size
+        frame.bind('<Configure>', self.onFrameResize)
+        #for stopping old event
+        self.resizeEventID = ""
+        self.updateCanvas()
 
     def setRoute(self, route):
         self.route = copy.deepcopy(route)
@@ -181,18 +191,45 @@ class BaseBoard(ABC):
     def getStateText(self, index):
         return ("Normal" if self.getID64(index) not in self.thargoidSystems else "Thargoid "+self.thargoidSystems[self.getID64(index)])
 
-    def resizeCanvas(self, bbox):
+    def onFrameResize(self, event: tk.Event):
+        #return if not parent
+        if event.widget != self.canvas.master: return
+        currentSize = self.canvas.winfo_width()
+        #return if same size
+        if event.width == currentSize: return
+        #cancel resize before starting a new one
+        if self.resizeEventID:
+            self.canvas.after_cancel(self.resizeEventID)
+            #delay longer when user dragging the window size 
+            delay = 500
+        else:
+            delay = 100
+        minSize = self.toPix(SIZE)
+        self.size = event.width if event.width > minSize else minSize
+        self.resizeEventID = self.canvas.after(delay, lambda: self.updateCanvas(True, False))
+
+    def resizeCanvas(self, bbox, moveY=True):
+        self.resizeEventID = ""
         self.canvas.config(scrollregion=bbox)
-        #resize the canvas
-        newHeight = self.size if bbox[3] >= self.size else bbox[3]
+        fixedSize = self.toPix(SIZE)
+        newHeight = fixedSize if bbox[3] >= fixedSize else bbox[3]
+        #change canvas height
         self.canvas.config(height=newHeight)
+        #change plugin frame height
+        self.canvas.master.config(height=newHeight)
+        #change canvas widths
+        self.canvas.config(width=self.size)
+        if not moveY: return
         if len(self.route) <= 0:
             self.canvas.yview_moveto(0)
         else:
             self.canvas.yview_moveto(bbox[3]/len(self.route)*(self.currentIndex)/bbox[3])
 
+    def updateCanvas(self, force=False, moveY=True):
+        self.setupStyle()
+
     @abstractmethod
-    def updateCanvas(self):
+    def setupStyle(self):
         pass
 
     def updateTheme(self):
@@ -201,23 +238,28 @@ class BaseBoard(ABC):
     def destroy(self):
         self.canvas.destroy()
 
+    def toPix(self, distance):
+        try:
+            return self.canvas.winfo_fpixels(distance)
+        except Exception as e:
+            logger.error(f"Failed to get number of pixels! {e}")
+            return 0.0
+
 class SimpleBoard(BaseBoard):
 
-    def __init__(self, frame):
-        super().__init__(frame)
-        self.styles = {}
-        self.styles["system"] =       {"x": 0,               "option": {"anchor": tk.NW, "justify": tk.LEFT}}
-        self.styles["starType"] =     {"x": 0,               "option": {"anchor": tk.NW, "justify": tk.LEFT}}
-        self.styles["state"] =        {"x": 0,               "option": {"anchor": tk.NW, "justify": tk.LEFT}}
-        self.styles["distance"] =     {"x": self.size,       "option": {"anchor": tk.NE, "justify": tk.RIGHT}}
-        self.styles["reminder"] =     {"x": self.size,       "option": {"anchor": tk.NE, "justify": tk.RIGHT, "tags": "logo", "font": (LOGOFONT, 20)}}
-        self.styles["edsmLogo"] =     {"x": self.size*.91,   "option": {"anchor": tk.NE, "justify": tk.RIGHT, "tags": "logo", "font": (LOGOFONT, 20)}}
-        self.styles["thargoidLogo"] = {"x": self.size*.82,   "option": {"anchor": tk.NE, "justify": tk.RIGHT, "tags": "logo", "font": (LOGOFONT, 20)}}
-        self.styles["bottomLine"] =   {"x": self.size/2, "option": {"anchor": tk.N,  "justify": tk.CENTER}}
-        self.rowObjs = []
-        self.updateCanvas()
+    def setupStyle(self):
+        self.styles["system"] =       {"x": 0,                      "option": {"anchor": tk.NW, "justify": tk.LEFT}}
+        self.styles["starType"] =     {"x": 0,                      "option": {"anchor": tk.NW, "justify": tk.LEFT}}
+        self.styles["state"] =        {"x": 0,                      "option": {"anchor": tk.NW, "justify": tk.LEFT}}
+        self.styles["distance"] =     {"x": self.size,              "option": {"anchor": tk.NE, "justify": tk.RIGHT}}
+        logoOffset = self.toPix("20p")
+        self.styles["reminder"] =     {"x": self.size,              "option": {"anchor": tk.NE, "justify": tk.RIGHT, "tags": "logo", "font": (LOGOFONT, 20)}}
+        self.styles["edsmLogo"] =     {"x": self.size-logoOffset,   "option": {"anchor": tk.NE, "justify": tk.RIGHT, "tags": "logo", "font": (LOGOFONT, 20)}}
+        self.styles["thargoidLogo"] = {"x": self.size-logoOffset*2, "option": {"anchor": tk.NE, "justify": tk.RIGHT, "tags": "logo", "font": (LOGOFONT, 20)}}
+        self.styles["bottomLine"] =   {"x": self.size/2,            "option": {"anchor": tk.N,  "justify": tk.CENTER}}
 
-    def updateCanvas(self):
+    def updateCanvas(self, force=False, moveY=True):
+        super().updateCanvas()
         #if no route
         if len(self.route) <= 0:
             self.currentIndex = 0
@@ -226,23 +268,23 @@ class SimpleBoard(BaseBoard):
             self.canvas.create_text(self.styles["system"]["x"],   0, **self.styles["system"]["option"],   text="-------No Route-------")
             self.canvas.create_text(self.styles["distance"]["x"], 0, **self.styles["distance"]["option"], text="-------")
         else:
-            if len(self.rowObjs) != len(self.route):
+            if len(self.rowObjs) != len(self.route) or force:
                 self.canvas.delete("all")
                 self.rowObjs = []
             #loop through route list
             cursorY = 0
             for index in range(len(self.route)):
-                if len(self.rowObjs) != len(self.route):
+                if len(self.rowObjs) != len(self.route) or force:
                     rowObj = {}
-                    rowObj["system"] =       self.canvas.create_text(self.styles["system"]["x"],           cursorY, **self.styles["system"]["option"])
-                    rowObj["distance"] =     self.canvas.create_text(self.styles["distance"]["x"],         cursorY, **self.styles["distance"]["option"])
+                    rowObj["system"] =       self.canvas.create_text(self.styles["system"]["x"],       cursorY, **self.styles["system"]["option"])
+                    rowObj["distance"] =     self.canvas.create_text(self.styles["distance"]["x"],     cursorY, **self.styles["distance"]["option"])
                     cursorY += max(getCanvasObjHeight(self.canvas, rowObj["system"]), getCanvasObjHeight(self.canvas, rowObj["distance"]))
-                    rowObj["starType"] =     self.canvas.create_text(self.styles["starType"]["x"],         cursorY, **self.styles["starType"]["option"])
-                    rowObj["reminder"] =     self.canvas.create_text(self.styles["reminder"]["x"],         cursorY, **self.styles["reminder"]["option"])
-                    rowObj["edsmLogo"] =     self.canvas.create_text(self.styles["edsmLogo"]["x"],         cursorY, **self.styles["edsmLogo"]["option"])
+                    rowObj["starType"] =     self.canvas.create_text(self.styles["starType"]["x"],     cursorY, **self.styles["starType"]["option"])
+                    rowObj["reminder"] =     self.canvas.create_text(self.styles["reminder"]["x"],     cursorY, **self.styles["reminder"]["option"])
+                    rowObj["edsmLogo"] =     self.canvas.create_text(self.styles["edsmLogo"]["x"],     cursorY, **self.styles["edsmLogo"]["option"])
                     rowObj["thargoidLogo"] = self.canvas.create_text(self.styles["thargoidLogo"]["x"], cursorY, **self.styles["thargoidLogo"]["option"])
                     cursorY += getCanvasObjHeight(self.canvas, rowObj["starType"])
-                    rowObj["state"] =        self.canvas.create_text(self.styles["state"]["x"],            cursorY, **self.styles["state"]["option"])
+                    rowObj["state"] =        self.canvas.create_text(self.styles["state"]["x"],        cursorY, **self.styles["state"]["option"])
                     cursorY += getCanvasObjHeight(self.canvas, rowObj["state"])
                     self.rowObjs.append(rowObj)
                 else:
@@ -273,7 +315,7 @@ class SimpleBoard(BaseBoard):
                 else:
                     self.canvas.itemconfigure(rowObj["thargoidLogo"], text="")
                 #if not bottom
-                if len(self.rowObjs) != len(self.route):
+                if len(self.rowObjs) != len(self.route) or force:
                     bottomLine = self.canvas.create_text(self.styles["bottomLine"]["x"], cursorY, **self.styles["bottomLine"]["option"])
                     self.canvas.addtag_withtag("line", bottomLine)
                     cursorY += getCanvasObjHeight(self.canvas, bottomLine)
@@ -293,28 +335,31 @@ class FancyBoard(BaseBoard):
 
     def __init__(self, frame):
         super().__init__(frame)
-        self.colors = THEME1933
-        self.rowHeight = self.size/6
-        self.styles = {}
-        #text style
-        self.styles["bulletBG"] =     {"type": "text", "x": self.rowHeight/2, "y": self.rowHeight/2,  "option": {"anchor": tk.CENTER, "fill": self.colors["minor2"],    "font": (LOGOFONT,    12), "text":BULLETBG}}
-        self.styles["bulletFG"] =     {"type": "text", "x": self.rowHeight/2, "y": self.rowHeight/2,  "option": {"anchor": tk.CENTER, "fill": self.colors["minor1"],    "font": (LOGOFONT,    12), "text":BULLETFG}}
-        self.styles["system"] =       {"type": "text", "x": self.rowHeight,   "y": self.rowHeight*.3, "option": {"anchor": tk.W,      "fill": self.colors["textMain"],  "font": ('Helvetica', 12)}}
-        self.styles["starType"] =     {"type": "text", "x": self.rowHeight,   "y": self.rowHeight*.7, "option": {"anchor": tk.W,      "fill": self.colors["textMinor"], "font": ('Helvetica', 9)}}
-        self.styles["distance"] =     {"type": "text", "x": self.size*.95,    "y": self.rowHeight*.3, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": ('Helvetica', 11)}}
-        self.styles["reminder"] =     {"type": "text", "x": self.size*.95,    "y": self.rowHeight*.7, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": (LOGOFONT,    20)}}
-        self.styles["edsmLogo"] =     {"type": "text", "x": self.size*.86,    "y": self.rowHeight*.7, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": (LOGOFONT,    20)}}
-        self.styles["thargoidLogo"] = {"type": "text", "x": self.size*.77,    "y": self.rowHeight*.7, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": (LOGOFONT,    20)}}
-        #line style
-        self.styles["bottomLine"] = {"type": "line", "x0": self.size*.025,   "x1": self.size*.975,   "y0": self.rowHeight,   "y1": self.rowHeight,   "option": {"fill": self.colors["minor1"], "width": "0.766p"}}
-        self.styles["bulletLine"] = {"type": "line", "x0": self.rowHeight/2, "x1": self.rowHeight/2, "y0": self.rowHeight/2, "y1": self.rowHeight/2, "option": {"fill": self.colors["main"],   "width": "1.5p"}}
-        self.rowObjs = []
         #tooltips
         self.tooltipsVar = tk.StringVar()
         self.tooltipsObj = tk.Label(self.canvas, fg=self.colors["textMinor"], bg=self.colors["bg"], relief=tk.RAISED, bd=1, font=('Helvetica', 9), textvariable=self.tooltipsVar)
         self.tooltips = None
         self.canvas.config(bg=self.colors["bg"])
         self.updateCanvas()
+
+    def setupStyle(self):
+        self.colors = THEME1933
+        self.rowHeight = self.toPix(SIZE)/6
+        #text style
+        self.styles["bulletBG"] =     {"type": "text", "x": self.rowHeight/2,                   "y": self.rowHeight/2,  "option": {"anchor": tk.CENTER, "fill": self.colors["minor2"],    "font": (LOGOFONT,    12), "text":BULLETBG}}
+        self.styles["bulletFG"] =     {"type": "text", "x": self.rowHeight/2,                   "y": self.rowHeight/2,  "option": {"anchor": tk.CENTER, "fill": self.colors["minor1"],    "font": (LOGOFONT,    12), "text":BULLETFG}}
+        self.styles["system"] =       {"type": "text", "x": self.rowHeight,                     "y": self.rowHeight*.3, "option": {"anchor": tk.W,      "fill": self.colors["textMain"],  "font": ('Helvetica', 12)}}
+        self.styles["starType"] =     {"type": "text", "x": self.rowHeight,                     "y": self.rowHeight*.7, "option": {"anchor": tk.W,      "fill": self.colors["textMinor"], "font": ('Helvetica', 9)}}
+        rightOffset = self.toPix("12p")
+        self.styles["distance"] =     {"type": "text", "x": self.size-rightOffset,              "y": self.rowHeight*.3, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": ('Helvetica', 11)}}
+        logoOffset = self.toPix("20p")
+        self.styles["reminder"] =     {"type": "text", "x": self.size-rightOffset,              "y": self.rowHeight*.7, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": (LOGOFONT,    20)}}
+        self.styles["edsmLogo"] =     {"type": "text", "x": self.size-rightOffset-logoOffset,   "y": self.rowHeight*.7, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": (LOGOFONT,    20)}}
+        self.styles["thargoidLogo"] = {"type": "text", "x": self.size-rightOffset-logoOffset*2, "y": self.rowHeight*.7, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": (LOGOFONT,    20)}}
+        #line style
+        lineOffset = self.toPix("6p")
+        self.styles["bottomLine"] =   {"type": "line", "x0": lineOffset,       "x1": self.size-lineOffset, "y0": self.rowHeight,   "y1": self.rowHeight,   "option": {"fill": self.colors["minor1"], "width": "0.766p"}}
+        self.styles["bulletLine"] =   {"type": "line", "x0": self.rowHeight/2, "x1": self.rowHeight/2,     "y0": self.rowHeight/2, "y1": self.rowHeight/2, "option": {"fill": self.colors["main"],   "width": "1.5p"}}
 
     def setHoverEvent(self, objID, cursor, text):
         self.canvas.tag_bind(objID, "<Enter>", lambda event: self.canvas.config(cursor=cursor))
@@ -332,7 +377,7 @@ class FancyBoard(BaseBoard):
         self.canvas.moveto("tooltips", self.canvas.canvasx(x), self.canvas.canvasy(y))
         bbox = self.canvas.bbox("tooltips")
         xOffset = 0
-        yOffset = self.canvas.winfo_fpixels("5p")
+        yOffset = self.toPix("5p")
         if bbox[0] < 0:
             xOffset -= bbox[0]
         if bbox[1] < 0:
@@ -350,7 +395,8 @@ class FancyBoard(BaseBoard):
         self.tooltipsVar.set("")
         self.canvas.itemconfigure("tooltips", state=tk.HIDDEN)
     
-    def updateCanvas(self):
+    def updateCanvas(self, force=False, moveY=True):
+        super().updateCanvas()
         #if no route
         if len(self.route) <= 0:
             self.currentIndex = 0
@@ -358,14 +404,14 @@ class FancyBoard(BaseBoard):
             self.rowObjs = []
             self.canvas.create_text(self.size/2, self.rowHeight/2, anchor=tk.CENTER, fill=self.colors["textMain"], font=self.styles["system"]["option"]["font"], justify=tk.CENTER, text="-------No Route-------")
         else:
-            if len(self.rowObjs) != len(self.route):
+            if len(self.rowObjs) != len(self.route) or force:
                 self.canvas.delete("all")
                 self.canvas.create_window(0, 0, tags="tooltips", window=self.tooltipsObj, state=tk.HIDDEN)
                 self.rowObjs = []
                 self.canvas.create_line(self.styles["bulletLine"]["x0"], self.styles["bulletLine"]["y0"], self.styles["bulletLine"]["x1"], self.styles["bulletLine"]["y1"]+self.rowHeight*(len(self.route)-1), **self.styles["bulletLine"]["option"])
             #loop through route list
             for index in range(len(self.route)):
-                if len(self.rowObjs) != len(self.route):
+                if len(self.rowObjs) != len(self.route) or force:
                     rowObj = {}
                     texts = ["bulletBG", "bulletFG", "system", "starType", "distance", "reminder", "edsmLogo", "thargoidLogo"]
                     for k in texts:
@@ -377,9 +423,9 @@ class FancyBoard(BaseBoard):
                 self.canvas.itemconfigure(rowObj["starType"], text=self.getStarTypeText(index))
                 self.canvas.itemconfigure(rowObj["distance"], **self.styles["distance"]["option"] , text=self.getDistanceText(index))
                 #make text resize dynamically
-                resizeCanvasText(self.canvas, rowObj["system"], "127p")
-                resizeCanvasText(self.canvas, rowObj["starType"], "116p")
-                resizeCanvasText(self.canvas, rowObj["distance"], "52p")
+                resizeCanvasText(self.canvas, rowObj["system"], self.size*.56)
+                resizeCanvasText(self.canvas, rowObj["starType"], self.size*.52)
+                resizeCanvasText(self.canvas, rowObj["distance"], self.size*.23)
                 #setup bullet
                 if self.getDistanceText(index) == CURRENT:
                     self.currentIndex = index
@@ -414,10 +460,10 @@ class FancyBoard(BaseBoard):
                     self.canvas.itemconfigure(rowObj["thargoidLogo"], text="")
                     self.removeHoverEvent(rowObj["thargoidLogo"])
                 #if not bottom
-                if len(self.rowObjs) != len(self.route):
+                if len(self.rowObjs) != len(self.route) or force:
                     self.canvas.create_line(self.styles["bottomLine"]["x0"], self.styles["bottomLine"]["y0"]+self.rowHeight*(index), self.styles["bottomLine"]["x1"], self.styles["bottomLine"]["y1"]+self.rowHeight*(index), **self.styles["bottomLine"]["option"])
         totalRow = max(len(self.route), 1)
-        self.resizeCanvas((0,0 ,self.size, self.rowHeight*totalRow))
+        self.resizeCanvas((0,0 ,self.size, self.rowHeight*totalRow), moveY)
 
     def updateTheme(self):
         super().updateTheme()

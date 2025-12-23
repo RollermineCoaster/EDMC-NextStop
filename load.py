@@ -194,11 +194,12 @@ class NextStop:
         """
         logger.info("Setting up UI.")
         #plugin frame
-        self.frame = tk.Frame(parent)
+        self.frame = frame = tk.Frame(parent)
+        frame.grid_propagate(False)
         #bing a custom event to canvas for updateCanvas
-        self.frame.bind('<<EDSMUpdate>>', lambda event : self.ui.updateCanvas())
+        frame.bind('<<EDSMUpdate>>', lambda event : self.ui.updateCanvas())
         self.createBoard()
-        return self.frame
+        return frame
 
     def createBoard(self):
         if self.mode.get() == self.SIMPLEMODE:
