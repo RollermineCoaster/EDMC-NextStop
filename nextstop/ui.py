@@ -349,6 +349,7 @@ class FancyBoard(BaseBoard):
         self.styles["bulletBG"] =     {"type": "text", "x": self.rowHeight/2,                   "y": self.rowHeight/2,  "option": {"anchor": tk.CENTER, "fill": self.colors["minor2"],    "font": (LOGOFONT,    12), "text":BULLETBG}}
         self.styles["bulletFG"] =     {"type": "text", "x": self.rowHeight/2,                   "y": self.rowHeight/2,  "option": {"anchor": tk.CENTER, "fill": self.colors["minor1"],    "font": (LOGOFONT,    12), "text":BULLETFG}}
         self.styles["system"] =       {"type": "text", "x": self.rowHeight,                     "y": self.rowHeight*.3, "option": {"anchor": tk.W,      "fill": self.colors["textMain"],  "font": ('Helvetica', 12)}}
+        self.styles["routeI"] = self.styles["system"]
         self.styles["starType"] =     {"type": "text", "x": self.rowHeight,                     "y": self.rowHeight*.7, "option": {"anchor": tk.W,      "fill": self.colors["textMinor"], "font": ('Helvetica', 9)}}
         rightOffset = self.toPix("12p")
         self.styles["distance"] =     {"type": "text", "x": self.size-rightOffset,              "y": self.rowHeight*.3, "option": {"anchor": tk.E,      "fill": self.colors["textMinor"], "font": ('Helvetica', 11)}}
@@ -411,19 +412,25 @@ class FancyBoard(BaseBoard):
                 self.canvas.create_line(self.styles["bulletLine"]["x0"], self.styles["bulletLine"]["y0"], self.styles["bulletLine"]["x1"], self.styles["bulletLine"]["y1"]+self.rowHeight*(len(self.route)-1), **self.styles["bulletLine"]["option"])
             #loop through route list
             for index in range(len(self.route)):
+                rowOffset = self.rowHeight*(index)
+                #count the route index digit
+                routeIDigit = len(f"{index+1}")
+                sysTexOffset = self.toPix(f"{routeIDigit*6 + 8}p")
                 if len(self.rowObjs) != len(self.route) or force:
                     rowObj = {}
-                    texts = ["bulletBG", "bulletFG", "system", "starType", "distance", "reminder", "edsmLogo", "thargoidLogo"]
+                    texts = ["bulletBG", "bulletFG", "system", "routeI", "starType", "distance", "reminder", "edsmLogo", "thargoidLogo"]
                     for k in texts:
-                        rowObj[k] = self.canvas.create_text(self.styles[k]["x"], self.styles[k]["y"]+self.rowHeight*(index), **self.styles[k]["option"])
+                        offsetX = sysTexOffset if k == "system" else 0
+                        rowObj[k] = self.canvas.create_text(self.styles[k]["x"]+offsetX, self.styles[k]["y"]+rowOffset, **self.styles[k]["option"])
                     self.rowObjs.append(rowObj)
                 else:
                     rowObj = self.rowObjs[index]
-                self.canvas.itemconfigure(rowObj["system"], **self.styles["system"]["option"], text=str(index+1)+". "+self.getSystemText(index))
+                self.canvas.itemconfigure(rowObj["routeI"], text=f"{index+1}. ")
+                self.canvas.itemconfigure(rowObj["system"], text=self.getSystemText(index))
                 self.canvas.itemconfigure(rowObj["starType"], text=self.getStarTypeText(index))
-                self.canvas.itemconfigure(rowObj["distance"], **self.styles["distance"]["option"] , text=self.getDistanceText(index))
+                self.canvas.itemconfigure(rowObj["distance"], text=self.getDistanceText(index))
                 #make text resize dynamically
-                resizeCanvasText(self.canvas, rowObj["system"], self.size*.56)
+                resizeCanvasText(self.canvas, rowObj["system"], self.size*.56-sysTexOffset)
                 resizeCanvasText(self.canvas, rowObj["starType"], self.size*.52)
                 resizeCanvasText(self.canvas, rowObj["distance"], self.size*.23)
                 #setup bullet
@@ -461,7 +468,7 @@ class FancyBoard(BaseBoard):
                     self.removeHoverEvent(rowObj["thargoidLogo"])
                 #if not bottom
                 if len(self.rowObjs) != len(self.route) or force:
-                    self.canvas.create_line(self.styles["bottomLine"]["x0"], self.styles["bottomLine"]["y0"]+self.rowHeight*(index), self.styles["bottomLine"]["x1"], self.styles["bottomLine"]["y1"]+self.rowHeight*(index), **self.styles["bottomLine"]["option"])
+                    self.canvas.create_line(self.styles["bottomLine"]["x0"], self.styles["bottomLine"]["y0"]+rowOffset, self.styles["bottomLine"]["x1"], self.styles["bottomLine"]["y1"]+rowOffset, **self.styles["bottomLine"]["option"])
         totalRow = max(len(self.route), 1)
         self.resizeCanvas((0,0 ,self.size, self.rowHeight*totalRow), moveY)
 
