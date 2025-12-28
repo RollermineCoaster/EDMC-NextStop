@@ -79,7 +79,7 @@ class FancyBoard(BaseBoard):
         else:
             canvas.delete("noRoute")
             if not self.hintsObj:
-                self.hintsObj = canvas.create_window(0, 0, tags="hints", window=self.hintsLabel, state=tk.HIDDEN)
+                self.hintsObj = canvas.create_window(0, 0, tags="hints", window=self.hintsLabel, state=tk.HIDDEN, anchor=tk.S)
             lineLength = self.rowHeight/2 + self.rowHeight*(len(self.route)-1)
             if not self.bulletLineObj:
                 self.bulletLineObj = canvas.create_line(self.rowHeight/2, self.rowHeight/2, self.rowHeight/2, lineLength, fill=self.colors["main"], width="1.5p")
@@ -111,21 +111,33 @@ class FancyBoard(BaseBoard):
     def showHints(self, x, y, text):
         canvas = self.canvas
         self.hintsVar.set(text)
-        canvas.itemconfig("hints", state=tk.NORMAL)
-        canvas.moveto("hints", self.canvas.canvasx(x), self.canvas.canvasy(y))
-        bbox = canvas.bbox("hints")
+        # Reset the anchor before measuring
+        canvas.itemconfig("hints", state=tk.NORMAL, anchor=tk.S)
+
+        canvas.coords("hints", x, y)
+
+        #force bbox to update
+        canvas.update_idletasks()
+
+        bbox = canvas.bbox("hints") # (x1, y1, x2, y2)
         xOffset = 0
-        yOffset = self.toPix("5p")
-        if bbox[0] < 0:
-            xOffset -= bbox[0]
+        #check if y1 off-screen
         if bbox[1] < 0:
-            yOffset -= bbox[1]
-        if bbox[2] > self.size:
-            xOffset -= bbox[2]-self.size
-        totalRow = max(len(self.route), 1)
-        if bbox[3]+yOffset > self.rowHeight*totalRow:
-            yOffset = -(yOffset+bbox[3]-bbox[1])
-        canvas.move("hints", xOffset, yOffset)
+            #flip the anchor
+            canvas.itemconfig("hints", anchor=tk.N)
+            #move it below logo
+            canvas.coords("hints", x, y+self.toPix("20p"))
+            #force bbox to update
+            canvas.update_idletasks()
+            bbox = canvas.bbox("hints") # (x1, y1, x2, y2)
+
+        #check if x1 and x2 off-screen
+        if bbox[0] < 0: # Left edge
+            xOffset = -bbox[0]
+        elif bbox[2] > self.size: # Right edge
+            xOffset = self.size - bbox[2]
+
+        canvas.move("hints", xOffset, 0)
         
     def hideHints(self):
         self.hintsVar.set("")

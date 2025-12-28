@@ -90,14 +90,14 @@ class FancyRow(BaseRow):
                 styles["reminder"]["options"]["fill"] = DANGERCOLOR
             elif reminderLogo == FUELSTARLOGO:
                 hintsText = FUELSTAR_STR
-            styles["reminder"]["event"] = {"<Enter>": lambda event, text=hintsText: self.onLogoEnter(event, text=text), "<Leave>": self.onLogoLeave}
+            styles["reminder"]["event"] = {"<Enter>": lambda event, text=hintsText: self.onLogoEnter(event, "reminder", text=text), "<Leave>": self.onLogoLeave}
         else:
             #clear event
             styles["reminder"]["event"] = {"<Enter>": "", "<Leave>": ""}
         
         #setup edsm logo event
         if edsmLogo:
-            styles["edsmLogo"]["event"] = {"<Button-1>": self.onEDSMClick, "<Enter>": lambda event, cursor="hand2", text=OPENEDSM_STR: self.onLogoEnter(event, cursor, text), "<Leave>": self.onLogoLeave}
+            styles["edsmLogo"]["event"] = {"<Button-1>": self.onEDSMClick, "<Enter>": lambda event: self.onLogoEnter(event, "edsmLogo", "hand2", OPENEDSM_STR), "<Leave>": self.onLogoLeave}
         else:
             #clear event
             styles["edsmLogo"]["event"] = {"<Button-1>": "", "<Enter>": "", "<Leave>": ""}
@@ -105,7 +105,7 @@ class FancyRow(BaseRow):
         #setup thargoid logo
         if thargoidLogo:
             styles["thargoidLogo"]["options"]["fill"] = THARGOIDCOLORS[self.getThargoidState()]
-            styles["thargoidLogo"]["event"] = {"<Enter>": lambda event, text=f"{THARGOID_STR} {self.getThargoidState()}": self.onLogoEnter(event, text=text), "<Leave>": self.onLogoLeave}            
+            styles["thargoidLogo"]["event"] = {"<Enter>": lambda event, text=f"{THARGOID_STR} {self.getThargoidState()}": self.onLogoEnter(event, "thargoidLogo", text=text), "<Leave>": self.onLogoLeave}            
         else:
             #clear event
             styles["thargoidLogo"]["event"] = {"<Enter>": "", "<Leave>": ""}
@@ -118,9 +118,17 @@ class FancyRow(BaseRow):
         super().update()
         self.resizeCanvasText()
 
-    def onLogoEnter(self, event, cursor="", text=""):
+    def onLogoEnter(self, event, objName, cursor="", text=""):
         super().onLogoEnter(event, cursor)
-        self.board.showHints(event.x, event.y, text)
+        if objName in self.objs:
+            bbox = self.canvas.bbox(self.objs[objName])
+            x = (bbox[0]+bbox[2])/2 #(x1-x2)/2
+            y = bbox[1] #y1
+        else:
+            x = self.canvas.canvasx(event.x)
+            gap = toPix(self.canvas, "5p")
+            y = self.canvas.canvasy(event.y)-gap
+        self.board.showHints(x, y, text)
 
     def onLogoLeave(self, event):
         super().onLogoLeave(event)
