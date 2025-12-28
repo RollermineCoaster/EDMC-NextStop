@@ -1,4 +1,8 @@
 import math
+from config import appname
+import logging
+
+logger = logging.getLogger(f"{appname}.EDMC-NextStop")
 
 def getDistance(pos1, pos2):
     return math.sqrt((pos1[0]-pos2[0])**2 + (pos1[1]-pos2[1])**2 + (pos1[2]-pos2[2])**2)
@@ -26,3 +30,10 @@ def resizeCanvasText(canvas, id, width):
     while textSize > 1 and getCanvasObjHeight(canvas, id) > textHeight:
         textSize -= 1
         canvas.itemconfigure(id, font=(textFont, textSize))
+
+def toPix(canvas, distance):
+    try:
+        return canvas.winfo_fpixels(distance)
+    except Exception as e:
+        logger.error(f"Failed to get number of pixels! {e}")
+    return 0.0
