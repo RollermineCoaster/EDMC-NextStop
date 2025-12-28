@@ -199,6 +199,7 @@ class NextStop:
         #bing a custom event to canvas for updateCanvas
         frame.bind('<<EDSMUpdate>>', lambda event : self.ui.updateCanvas())
         self.createBoard()
+        self.ui.updateCanvas()
         return frame
 
     def createBoard(self):
