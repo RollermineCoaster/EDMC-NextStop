@@ -335,6 +335,8 @@ def DCoHWorker() -> None:
         data = req.json()
         #logger.debug("Data: "+str(data))
         thargoidSystems = {}
+        for row in data["maelstroms"]:
+            thargoidSystems[row["systemAddress"]] = "Titan"
         for row in data["systems"]:
             thargoidSystems[row["systemAddress"]] = row["thargoidLevel"]["name"]
         logger.debug("Thargoid systems: "+str(thargoidSystems))
