@@ -13,8 +13,14 @@ import copy
 import json
 from os import path
 
-from nextstop.util import getDistance
-from nextstop.ui import *
+import ctypes
+from ctypes.wintypes import DWORD, LPCVOID, LPCWSTR
+AddFontResourceEx = ctypes.windll.gdi32.AddFontResourceExW
+AddFontResourceEx.restypes = [LPCWSTR, DWORD, LPCVOID]  # type: ignore
+FR_PRIVATE = 0x10
+AddFontResourceEx(path.join(path.dirname(__file__), 'nextstop/assets/nextstop-logo.ttf'), FR_PRIVATE, 0)
+
+from nextstop.ui.boards import SimpleBoard, FancyBoard
 
 import myNotebook as nb  # noqa: N813
 from config import appname, config
