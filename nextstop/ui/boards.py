@@ -6,9 +6,13 @@ from nextstop.util import *
 import tkinter as tk
 from theme import theme
 
+import time
+
 class SimpleBoard(BaseBoard):
 
     def updateCanvas(self, moveY=True):
+        if self.debugMode: startTime = time.perf_counter()
+        
         super().updateCanvas()
         canvas = self.canvas
         #remove extra row object
@@ -27,7 +31,8 @@ class SimpleBoard(BaseBoard):
             rowHeight = self.toPix("40p")
             for index in range(len(self.route)):
                 system = self.route[index]
-                system["distance"] = getDistance(self.currentPos, system["pos"])
+                system["distance"] = distance = getDistance(self.currentPos, system["pos"])
+                if distance <= 0: self.currentIndex = index
                 if index >= len(self.rowObjs):
                     row = SimpleRow(self, canvas, 0, rowHeight*index, self.size, rowHeight, index+1, system)
                     row.draw()
@@ -43,10 +48,14 @@ class SimpleBoard(BaseBoard):
         self.resizeCanvas(canvas.bbox("all"), moveY)
         canvas.after(10, lambda: self.updateTheme())
 
+        if self.debugMode:
+            endTime = time.perf_counter()
+            self.updateMetrics(endTime - startTime, len(self.rowObjs))
+
     def updateTheme(self):
         super().updateTheme()
-        self.canvas.itemconfigure("all", fill=theme.current["foreground"], font=theme.current["font"])
-        self.canvas.itemconfigure("logo", font=(LOGOFONT, 20))
+        self.canvas.itemconfig("all", fill=theme.current["foreground"], font=theme.current["font"])
+        self.canvas.itemconfig("logo", font=(LOGOFONT, 20))
 
 class FancyBoard(BaseBoard):
 
@@ -63,6 +72,8 @@ class FancyBoard(BaseBoard):
         self.canvas.config(bg=self.colors["bg"])
     
     def updateCanvas(self, moveY=True):
+        if self.debugMode: startTime = time.perf_counter()
+
         super().updateCanvas()
         canvas = self.canvas
         #remove extra row object
@@ -89,7 +100,8 @@ class FancyBoard(BaseBoard):
             for index in range(len(self.route)):
                 rowOffset = self.rowHeight*(index)
                 system = self.route[index]
-                system["distance"] = getDistance(self.currentPos, system["pos"])
+                system["distance"] = distance = getDistance(self.currentPos, system["pos"])
+                if distance <= 0: self.currentIndex = index
                 if index >= len(self.rowObjs):
                     row = FancyRow(self, canvas, 0, rowOffset, self.size, self.rowHeight, index+1, system)
                     row.draw()
@@ -104,6 +116,10 @@ class FancyBoard(BaseBoard):
                 row.showBottomLine(notBottom)
         totalRow = max(len(self.route), 1)
         self.resizeCanvas((0,0 ,self.size, self.rowHeight*totalRow), moveY)
+
+        if self.debugMode:
+            endTime = time.perf_counter()
+            self.updateMetrics(endTime - startTime, len(self.rowObjs))
 
     def updateTheme(self):
         super().updateTheme()

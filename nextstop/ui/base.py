@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 import copy
 import webbrowser
 
-from config import appname
+from config import appname, config
 import logging
 logger = logging.getLogger(f"{appname}.EDMC-NextStop")
 
@@ -194,6 +194,28 @@ class BaseBoard(ABC):
         frame.bind('<Configure>', self.onFrameResize)
         #for stopping old event
         self.resizeEventID = ""
+
+        #debug
+        self.debugVar = tk.StringVar()
+        self.debugLabel = tk.Label(frame, fg="#00FF00", bg="#000000", font=("Consolas", 9, "bold"), textvariable=self.debugVar, anchor=tk.W, justify=tk.LEFT)
+        self.updateDebugObject()
+
+    def updateDebugObject(self):
+        self.debugMode = debug = config.get_int('nextStop_DebugMode') == 1
+        if debug:
+            self.debugLabel.place(x=0, y=0)
+        else:
+            self.debugLabel.place_forget()
+
+    def updateMetrics(self, duration, rowCount):
+        if not self.debugMode: return
+        self.updateDebugObject()
+        
+        ms = duration*1000
+        fps = 1.0/duration if duration > 0 else 0
+
+        text = f"FPS: {fps:.0f}\nROW: {rowCount}\n{ms:.1f}ms"
+        self.debugVar.set(text)
 
     def setRoute(self, route):
         self.route = copy.deepcopy(route)

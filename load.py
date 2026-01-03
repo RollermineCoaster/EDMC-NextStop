@@ -44,10 +44,11 @@ class NextStop:
             config.set('nextStop_Mode', self.MODES[0])
         #config variable
         self.mode = tk.StringVar(value=config.get_str('nextStop_Mode'))
+        self.debugMode = tk.IntVar(value=config.get_int('nextStop_DebugMode'))
         #init module
         self.ui = None
         self.frame = None
-        logger.debug("Config: nextStop_Mode = "+self.mode.get())
+        logger.debug(f"Config: nextStop_Mode = {self.mode.get()}, nextStop_DebugMode = {self.debugMode.get()}")
         #get info from DCoH using thread
         thread = Thread(target=DCoHWorker, name='DCoH worker')
         thread.daemon = True
@@ -161,9 +162,12 @@ class NextStop:
         frame = nb.Frame(parent)
 
         # setup our config
-        nb.Label(frame, text='Mode: ').grid(row=current_row)
-        nb.OptionMenu(frame, self.mode, self.mode.get(), *self.MODES).grid(row=current_row, column=1)
+        #mode
+        nb.Label(frame, text='Mode: ').grid(row=current_row, column=0, sticky=tk.W)
+        nb.OptionMenu(frame, self.mode, self.mode.get(), *self.MODES).grid(row=current_row, column=1, sticky=tk.W)
         current_row += 1  # Always increment our row counter, makes for far easier tkinter design.
+        nb.Label(frame, text='Debug: ').grid(row=current_row, column=0, sticky=tk.W)
+        nb.Checkbutton(frame, text='Show Performance Metrics', variable=self.debugMode).grid(row=current_row, column=1, sticky=tk.W)
         return frame
 
     def on_preferences_closed(self, cmdr: str, is_beta: bool) -> None:
@@ -173,6 +177,8 @@ class NextStop:
         :param cmdr: The current ED Commander
         :param is_beta: Whether or not EDMC is currently marked as in beta mode
         """
+        config.set('nextStop_DebugMode', self.debugMode.get())
+        self.ui.updateDebugObject()
         mode = self.mode.get()
         config.set('nextStop_Mode', mode)
         if mode == self.SIMPLEMODE and not isinstance(self.ui, SimpleBoard) or mode == self.FANCYMODE and not isinstance(self.ui, FancyBoard):
