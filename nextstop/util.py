@@ -37,3 +37,14 @@ def toPix(canvas, distance):
     except Exception as e:
         logger.error(f"Failed to get number of pixels! {e}")
     return 0.0
+
+def formatText(value, unit, units, placeholder=""):
+    if not placeholder: placeholder = f"{value}"
+    output = placeholder if value <= 0 else str(value)
+    output += f" {unit}" if value <= 1 else f" {units}"
+    return output
+
+def getTime(seconds):
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return h, m, s

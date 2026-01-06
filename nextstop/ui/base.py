@@ -11,21 +11,203 @@ from config import appname, config
 import logging
 logger = logging.getLogger(f"{appname}.EDMC-NextStop")
 
-class BaseRow(ABC):
+class BaseBoard(ABC):
 
-    def __init__(self, board, canvas, x, y, width, height, index, system):
+    def __init__(self, frame: tk.Frame):
+        self.route = []
+        self.thargoidSystems= {}
+        self.currentIndex = 0
+        self.currentPos = [0.0, 0.0, 0.0]
+        self.jumping = False
+        self.size = frame.winfo_fpixels(SIZE)
+        self.styles = {}
+        self.rowObjs = []
+        #create canvas
+        self.canvas = tk.Canvas(frame, width=self.size, height=0, bd=0, highlightthickness=0)
+        self.canvas.grid()
+        #make canvas scrollable (1 scroll in Windows equal 120)
+        self.canvas.bind('<MouseWheel>', self.onCanvasScroll)
+
+        #try resize canvas when plugin frame changing size
+        frame.bind('<Configure>', self.onFrameResize)
+        #for stopping old event
+        self.resizeEventID = ""
+
+        #debug
+        self.debugVar = tk.StringVar()
+        self.debugLabel = tk.Label(frame, fg="#00FF00", bg="#000000", font=("Consolas", 9, "bold"), textvariable=self.debugVar, anchor=tk.W, justify=tk.LEFT)
+        self.updateDebugObject()
+
+    def updateDebugObject(self):
+        self.debugMode = debug = config.get_int('nextStop_DebugMode') == 1
+        if debug:
+            self.debugLabel.place(x=0, y=0)
+        else:
+            self.debugLabel.place_forget()
+
+    def updateMetrics(self, duration, rowCount):
+        if not self.debugMode: return
+        self.updateDebugObject()
+        
+        ms = duration*1000
+        fps = 1.0/duration if duration > 0 else 0
+
+        text = f"FPS: {fps:.0f}\nROW: {rowCount}\n{ms:.1f}ms"
+        self.debugVar.set(text)
+
+    def setRoute(self, route):
+        self.route = copy.deepcopy(route)
+
+    def getRoute(self):
+        return copy.deepcopy(self.route)
+
+    def setThargoidSystems(self, thargoidSystems):
+        self.thargoidSystems = copy.deepcopy(thargoidSystems)
+
+    def getThargoidSystems(self):
+        return copy.deepcopy(self.thargoidSystems)
+
+    def setCurrentPos(self, currentPos):
+        self.currentPos = copy.deepcopy(currentPos)
+
+    def getCurrentPos(self):
+        return copy.deepcopy(self.currentPos)
+
+    def onCanvasScroll(self, event: tk.Event):
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), tk.UNITS)
+
+    def onFrameResize(self, event: tk.Event):
+        #return if not parent
+        if event.widget != self.canvas.master: return
+        currentSize = self.canvas.winfo_width()
+        #return if same size
+        if event.width == currentSize: return
+        #cancel resize before starting a new one
+        if self.resizeEventID:
+            self.canvas.after_cancel(self.resizeEventID)
+            #delay longer when user dragging the window size 
+            delay = 500
+        else:
+            delay = 100
+        minSize = self.toPix(SIZE)
+        self.size = event.width if event.width > minSize else minSize
+        self.resizeEventID = self.canvas.after(delay, lambda: self.updateCanvas(False))
+
+    def resizeCanvas(self, bbox, topOffset=0, moveY=True):
+        self.resizeEventID = ""
+        scrollArea = (bbox[0], bbox[1], bbox[2], bbox[3]+topOffset)
+        self.canvas.config(scrollregion=scrollArea)
+        fixedSize = self.toPix(SIZE) + topOffset
+        newHeight = fixedSize if scrollArea[3] >= fixedSize else scrollArea[3]
+        #change canvas height
+        self.canvas.config(height=newHeight)
+        #change plugin frame height
+        self.canvas.master.config(height=newHeight)
+        #change canvas widths
+        self.canvas.config(width=self.size)
+        if not moveY: return
+        if len(self.route) <= 0:
+            self.canvas.yview_moveto(0)
+        else:
+            fraction = bbox[3]/scrollArea[3] * (self.currentIndex/len(self.route))
+            self.canvas.yview_moveto(fraction)
+
+    @abstractmethod
+    def updateCanvas(self, moveY=True):
+        pass
+
+    def updateTheme(self):
+        theme.update(self.canvas)
+
+    def destroy(self):
+        self.canvas.destroy()
+
+    def toPix(self, distance):
+        try:
+            return self.canvas.winfo_fpixels(distance)
+        except Exception as e:
+            logger.error(f"Failed to get number of pixels! {e}")
+            return 0.0
+
+class BaseWidget(ABC):
+
+    def __init__(self, board: BaseBoard, canvas: tk.Canvas, x, y, width, height):
         self.board = board
         self.canvas = canvas
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.setIndex(index)
-        self.setSystem(system)
         self.objs = {}
         self.styles = {}
 
     def setWidth(self, width): self.width = width
+    def setHeight(self, height): self.height = height
+
+    @abstractmethod
+    def setupStyle(self): pass
+
+    def draw(self):
+        self.setupStyle()
+        canvas = self.canvas
+        if len(self.objs) > 0: self.clear()
+        for k, v in self.styles.items():
+            match v["type"]:
+                case "text":
+                    obj = canvas.create_text(self.x+v["x"], self.y+v["y"], **v["options"])
+                case "line":
+                    obj = canvas.create_line(self.x+v["x0"], self.y+v["y0"], self.x+v["x1"], self.y+v["y1"], **v["options"])
+                case "rect":
+                    obj = canvas.create_rectangle(self.x+v["x0"], self.y+v["y0"], self.x+v["x1"], self.y+v["y1"], **v["options"])
+                case _:
+                    logger.error(f"Unknown object type! {k}: {v}")
+                    return
+            self.objs[k] = obj
+            if "event" in v:
+                for name, event in v["event"].items():
+                    canvas.tag_bind(obj, name, event)
+
+    def update(self, toTop=False):
+        if len(self.objs) <= 0: return self.draw()
+        self.setupStyle()
+        canvas = self.canvas
+        for k, v in self.styles.items():
+            obj = self.objs[k]
+            match v["type"]:
+                case "text":
+                    canvas.coords(obj, self.x+v["x"], self.y+v["y"])
+                case "line" | "rect":
+                    canvas.coords(obj, self.x+v["x0"], self.y+v["y0"], self.x+v["x1"], self.y+v["y1"])
+            canvas.itemconfig(obj, **v["options"])
+            if "event" in v:
+                for name, event in v["event"].items():
+                    canvas.tag_bind(obj, name, event)
+            if toTop:
+                canvas.tag_raise(obj)
+
+    def moveTo(self, x, y):
+        self.x = x
+        self.y = y
+        self.update()
+
+    def updateObj(self, objName, **options):
+        if objName in self.objs:
+            self.canvas.itemconfig(objName, **options)
+        else:
+            logger.error(f"Object ({objName}) not found!")
+
+    def clear(self):
+        for id in self.objs.values():
+            self.canvas.delete(id)
+        self.objs.clear()
+
+class BaseRow(BaseWidget):
+
+    def __init__(self, board, canvas, x, y, width, height, index, system):
+        super().__init__(board, canvas, x, y, width, height)
+        self.setIndex(index)
+        self.setSystem(system)
+
     def setIndex(self, index): self.index = index
     def setSystem(self, system): self.system = copy.deepcopy(system)
 
@@ -120,51 +302,6 @@ class BaseRow(ABC):
             case _:
                 return ""
 
-    @abstractmethod
-    def setupStyle(self):
-        pass
-
-    def draw(self):
-        self.setupStyle()
-        canvas = self.canvas
-        if len(self.objs) > 0: self.clear()
-        for k, v in self.styles.items():
-            if v["type"] == "text":
-                self.objs[k] = obj = canvas.create_text(self.x+v["x"], self.y+v["y"], **v["options"])
-            elif v["type"] == "line":
-                self.objs[k] = canvas.create_line(self.x+v["x0"], self.y+v["y0"], self.x+v["x1"], self.y+v["y1"], **v["options"])
-            else:
-                logger.error(f"Unknown object type! {k}: {v}")
-                return
-            if "event" in v:
-                for name, event in v["event"].items():
-                    canvas.tag_bind(obj, name, event)
-
-    def update(self):
-        self.setupStyle()
-        canvas = self.canvas
-        for k, v in self.styles.items():
-            obj = self.objs[k]
-            if v["type"] == "text":
-                canvas.coords(obj, self.x+v["x"], self.y+v["y"])
-            elif v["type"] == "line":
-                canvas.coords(obj, self.x+v["x0"], self.y+v["y0"], self.x+v["x1"], self.y+v["y1"])
-            canvas.itemconfig(obj, **v["options"])
-            if "event" in v:
-                for name, event in v["event"].items():
-                    canvas.tag_bind(obj, name, event)
-
-    def updateObj(self, objName, **options):
-        if objName in self.objs:
-            self.canvas.itemconfig(objName, **options)
-        else:
-            logger.error(f"Object ({objName}) not found!")
-
-    def clear(self):
-        for id in self.objs.values():
-            self.canvas.delete(id)
-        self.objs.clear()
-
     def showBottomLine(self, show):
         state = tk.NORMAL if show else tk.HIDDEN
         self.canvas.itemconfig(self.objs["bottomLine"], state=state)
@@ -172,116 +309,3 @@ class BaseRow(ABC):
     def onEDSMClick(self, event): webbrowser.open(self.getEDSMUrl())
     def onLogoEnter(self, event, cursor=""): self.canvas.config(cursor=cursor)
     def onLogoLeave(self, event): self.canvas.config(cursor="")
-
-class BaseBoard(ABC):
-
-    def __init__(self, frame):
-        self.route = []
-        self.thargoidSystems= {}
-        self.currentIndex = 0
-        self.currentPos = [0.0, 0.0, 0.0]
-        self.jumping = False
-        self.size = frame.winfo_fpixels(SIZE)
-        self.styles = {}
-        self.rowObjs = []
-        #create canvas
-        self.canvas = tk.Canvas(frame, width=self.size, height=0, bd=0, highlightthickness=0)
-        self.canvas.grid()
-        #make canvas scrollable (1 scroll in Windows equal 120)
-        self.canvas.bind('<MouseWheel>', lambda event : self.canvas.yview_scroll(int(-1*(event.delta/120)), tk.UNITS))
-
-        #try resize canvas when plugin frame changing size
-        frame.bind('<Configure>', self.onFrameResize)
-        #for stopping old event
-        self.resizeEventID = ""
-
-        #debug
-        self.debugVar = tk.StringVar()
-        self.debugLabel = tk.Label(frame, fg="#00FF00", bg="#000000", font=("Consolas", 9, "bold"), textvariable=self.debugVar, anchor=tk.W, justify=tk.LEFT)
-        self.updateDebugObject()
-
-    def updateDebugObject(self):
-        self.debugMode = debug = config.get_int('nextStop_DebugMode') == 1
-        if debug:
-            self.debugLabel.place(x=0, y=0)
-        else:
-            self.debugLabel.place_forget()
-
-    def updateMetrics(self, duration, rowCount):
-        if not self.debugMode: return
-        self.updateDebugObject()
-        
-        ms = duration*1000
-        fps = 1.0/duration if duration > 0 else 0
-
-        text = f"FPS: {fps:.0f}\nROW: {rowCount}\n{ms:.1f}ms"
-        self.debugVar.set(text)
-
-    def setRoute(self, route):
-        self.route = copy.deepcopy(route)
-
-    def getRoute(self):
-        return copy.deepcopy(self.route)
-
-    def setThargoidSystems(self, thargoidSystems):
-        self.thargoidSystems = copy.deepcopy(thargoidSystems)
-
-    def getThargoidSystems(self):
-        return copy.deepcopy(self.thargoidSystems)
-
-    def setCurrentPos(self, currentPos):
-        self.currentPos = copy.deepcopy(currentPos)
-
-    def getCurrentPos(self):
-        return copy.deepcopy(self.currentPos)
-
-    def onFrameResize(self, event: tk.Event):
-        #return if not parent
-        if event.widget != self.canvas.master: return
-        currentSize = self.canvas.winfo_width()
-        #return if same size
-        if event.width == currentSize: return
-        #cancel resize before starting a new one
-        if self.resizeEventID:
-            self.canvas.after_cancel(self.resizeEventID)
-            #delay longer when user dragging the window size 
-            delay = 500
-        else:
-            delay = 100
-        minSize = self.toPix(SIZE)
-        self.size = event.width if event.width > minSize else minSize
-        self.resizeEventID = self.canvas.after(delay, lambda: self.updateCanvas(False))
-
-    def resizeCanvas(self, bbox, moveY=True):
-        self.resizeEventID = ""
-        self.canvas.config(scrollregion=bbox)
-        fixedSize = self.toPix(SIZE)
-        newHeight = fixedSize if bbox[3] >= fixedSize else bbox[3]
-        #change canvas height
-        self.canvas.config(height=newHeight)
-        #change plugin frame height
-        self.canvas.master.config(height=newHeight)
-        #change canvas widths
-        self.canvas.config(width=self.size)
-        if not moveY: return
-        if len(self.route) <= 0:
-            self.canvas.yview_moveto(0)
-        else:
-            self.canvas.yview_moveto(bbox[3]/len(self.route)*(self.currentIndex)/bbox[3])
-
-    @abstractmethod
-    def updateCanvas(self, moveY=True):
-        pass
-
-    def updateTheme(self):
-        theme.update(self.canvas)
-
-    def destroy(self):
-        self.canvas.destroy()
-
-    def toPix(self, distance):
-        try:
-            return self.canvas.winfo_fpixels(distance)
-        except Exception as e:
-            logger.error(f"Failed to get number of pixels! {e}")
-            return 0.0

@@ -103,6 +103,7 @@ def run_test():
     def set_route120(): set_route(MOCK_ROUTE_120)
 
     def reset_route():
+        board.currentIndex = 0
         board.setCurrentPos([0, 0, 0])
         board.updateCanvas()
 

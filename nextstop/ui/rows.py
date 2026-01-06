@@ -54,8 +54,8 @@ class FancyRow(BaseRow):
         else:
             bulletBGColor = colors["minor2"]
             bulletFGColor = colors["minor1"]
-        styles["bulletBG"] =     {"type": "text", "x": self.height/2,                       "y": self.height/2,  "options": {"anchor": tk.CENTER, "fill": bulletBGColor,            "font": (LOGOFONT,    12), "text":BULLETBG}}
-        styles["bulletFG"] =     {"type": "text", "x": self.height/2,                       "y": self.height/2,  "options": {"anchor": tk.CENTER, "fill": bulletFGColor,            "font": (LOGOFONT,    12), "text":BULLETFG}}
+        styles["bulletBG"] =     {"type": "text", "x": self.height/2,                       "y": self.height/2,  "options": {"anchor": tk.CENTER, "fill": bulletBGColor,       "font": (LOGOFONT,    12), "text":BULLETBG}}
+        styles["bulletFG"] =     {"type": "text", "x": self.height/2,                       "y": self.height/2,  "options": {"anchor": tk.CENTER, "fill": bulletFGColor,       "font": (LOGOFONT,    12), "text":BULLETFG}}
         styles["routeI"] =       {"type": "text", "x": self.height,                         "y": self.height*.3, "options": {"anchor": tk.W,      "fill": colors["textMain"],  "font": ('Helvetica', 12)}}
         #count the route index digit
         indexDigit = len(f"{self.index}")
@@ -118,7 +118,7 @@ class FancyRow(BaseRow):
         super().update()
         self.resizeCanvasText()
 
-    def onLogoEnter(self, event, objName, cursor="", text=""):
+    def onLogoEnter(self, event: tk.Event, objName, cursor="", text=""):
         super().onLogoEnter(event, cursor)
         if objName in self.objs:
             bbox = self.canvas.bbox(self.objs[objName])
@@ -130,7 +130,7 @@ class FancyRow(BaseRow):
             y = self.canvas.canvasy(event.y)-gap
         self.board.showHints(x, y, text)
 
-    def onLogoLeave(self, event):
+    def onLogoLeave(self, event: tk.Event):
         super().onLogoLeave(event)
         self.board.hideHints()
 
