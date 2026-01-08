@@ -115,8 +115,7 @@ class FancyRow(BaseRow):
         self.resizeCanvasText()
 
     def update(self):
-        super().update()
-        self.resizeCanvasText()
+        if super().update(): self.resizeCanvasText()
 
     def onLogoEnter(self, event: tk.Event, objName, cursor="", text=""):
         super().onLogoEnter(event, cursor)

@@ -16,12 +16,12 @@ class BaseBoard(ABC):
     def __init__(self, frame: tk.Frame):
         self.route = []
         self.thargoidSystems= {}
-        self.currentIndex = 0
+        self.currentIndex = -1
         self.currentPos = [0.0, 0.0, 0.0]
         self.jumping = False
         self.size = frame.winfo_fpixels(SIZE)
         self.styles = {}
-        self.rowObjs = []
+        self.rows: list[BaseRow] = []
         #create canvas
         self.canvas = tk.Canvas(frame, width=self.size, height=0, bd=0, highlightthickness=0)
         self.canvas.grid()
@@ -55,23 +55,45 @@ class BaseBoard(ABC):
         text = f"FPS: {fps:.0f}\nROW: {rowCount}\n{ms:.1f}ms"
         self.debugVar.set(text)
 
-    def setRoute(self, route):
-        self.route = copy.deepcopy(route)
+    def setRoute(self, route): self.route = copy.deepcopy(route)
+    def getRoute(self): return copy.deepcopy(self.route)
+    def setThargoidSystems(self, thargoidSystems): self.thargoidSystems = copy.deepcopy(thargoidSystems)
+    def getThargoidSystems(self): return copy.deepcopy(self.thargoidSystems)
+    def setCurrentPos(self, currentPos): self.currentPos = copy.deepcopy(list(currentPos))
+    def getCurrentPos(self): return copy.deepcopy(self.currentPos)
+    def getSystemPos(self, index): return copy.deepcopy(self.route[index]["pos"])
 
-    def getRoute(self):
-        return copy.deepcopy(self.route)
+    def updateCurrentIndex(self):
+        #no route
+        if len(self.route) <= 0:
+            self.currentIndex = -1
+            return
+        
+        currentPos = self.getCurrentPos()
+        currentIndex = max(self.currentIndex, 0)
+        #set it to 0 or current value
+        if self.route[currentIndex]["pos"] == currentPos:
+            self.currentIndex = currentIndex
+            return
+        
+        for i in range(1, 4):
+            #look down
+            if currentIndex+i < len(self.route) and self.route[currentIndex+i]["pos"] == currentPos:
+                self.currentIndex = currentIndex+i
+                return
+            #look up
+            if currentIndex-i >= 0 and self.route[currentIndex-i]["pos"] == currentPos:
+                self.currentIndex = currentIndex-i
+                return
+        
+        #look in route
+        for i, system in enumerate(self.route):
+            if system["pos"] == currentPos:
+                self.currentIndex = i
+                return
 
-    def setThargoidSystems(self, thargoidSystems):
-        self.thargoidSystems = copy.deepcopy(thargoidSystems)
-
-    def getThargoidSystems(self):
-        return copy.deepcopy(self.thargoidSystems)
-
-    def setCurrentPos(self, currentPos):
-        self.currentPos = copy.deepcopy(currentPos)
-
-    def getCurrentPos(self):
-        return copy.deepcopy(self.currentPos)
+        #not found
+        self.currentIndex = -1
 
     def onCanvasScroll(self, event: tk.Event):
         self.canvas.yview_scroll(int(-1*(event.delta/120)), tk.UNITS)
@@ -105,7 +127,7 @@ class BaseBoard(ABC):
         self.canvas.master.config(height=newHeight)
         #change canvas widths
         self.canvas.config(width=self.size)
-        if not moveY: return
+        if not moveY or self.currentIndex < 0: return
         if len(self.route) <= 0:
             self.canvas.yview_moveto(0)
         else:
@@ -134,15 +156,23 @@ class BaseWidget(ABC):
     def __init__(self, board: BaseBoard, canvas: tk.Canvas, x, y, width, height):
         self.board = board
         self.canvas = canvas
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        self.setPos(x, y)
+        self.setWidth(width)
+        self.setHeight(height)
         self.objs = {}
         self.styles = {}
+        self.changed = False
 
-    def setWidth(self, width): self.width = width
-    def setHeight(self, height): self.height = height
+    def _setter(self, name, value):
+        if getattr(self, name, None) == value: return
+        setattr(self, name, value)
+        self.changed = True
+
+    def setWidth(self, width): self._setter("width", width)
+    def setHeight(self, height): self._setter("height", height)
+    def setPos(self, x, y):
+        self._setter("x", x)
+        self._setter("y", y)
 
     @abstractmethod
     def setupStyle(self): pass
@@ -166,9 +196,13 @@ class BaseWidget(ABC):
             if "event" in v:
                 for name, event in v["event"].items():
                     canvas.tag_bind(obj, name, event)
+        return True
 
     def update(self, toTop=False):
-        if len(self.objs) <= 0: return self.draw()
+        if not self.changed: return False
+
+        if len(self.objs) <= 0: return self.draw() 
+
         self.setupStyle()
         canvas = self.canvas
         for k, v in self.styles.items():
@@ -184,11 +218,13 @@ class BaseWidget(ABC):
                     canvas.tag_bind(obj, name, event)
             if toTop:
                 canvas.tag_raise(obj)
+        
+        self.changed = False
+        return True
 
-    def moveTo(self, x, y):
-        self.x = x
-        self.y = y
-        self.update()
+    def moveTo(self, x, y, toTop=False):
+        self.setPos(x, y)
+        self.update(toTop)
 
     def updateObj(self, objName, **options):
         if objName in self.objs:
@@ -208,8 +244,9 @@ class BaseRow(BaseWidget):
         self.setIndex(index)
         self.setSystem(system)
 
-    def setIndex(self, index): self.index = index
-    def setSystem(self, system): self.system = copy.deepcopy(system)
+    def getIndex(self): return getattr(self, "index", 0)
+    def setIndex(self, index): self._setter("index", index)
+    def setSystem(self, system): self._setter("system", copy.deepcopy(system))
 
     def getSystemText(self): return self.system["system"]
     def getEDSMUrl(self): return self.system["edsmUrl"]

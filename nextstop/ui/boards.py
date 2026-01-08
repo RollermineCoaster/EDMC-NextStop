@@ -17,8 +17,8 @@ class SimpleBoard(BaseBoard):
         super().updateCanvas()
         canvas = self.canvas
         #remove extra row object
-        while len(self.rowObjs) > len(self.route):
-            row = self.rowObjs.pop()
+        while len(self.rows) > len(self.route):
+            row = self.rows.pop()
             row.clear()
         #if no route
         if len(self.route) <= 0:
@@ -34,12 +34,12 @@ class SimpleBoard(BaseBoard):
                 system = self.route[index]
                 system["distance"] = distance = getDistance(self.currentPos, system["pos"])
                 if distance <= 0: self.currentIndex = index
-                if index >= len(self.rowObjs):
+                if index >= len(self.rows):
                     row = SimpleRow(self, canvas, 0, rowHeight*index, self.size, rowHeight, index+1, system)
                     row.draw()
-                    self.rowObjs.append(row)
+                    self.rows.append(row)
                 else:
-                    row = self.rowObjs[index]
+                    row = self.rows[index]
                     row.setWidth(self.size)
                     row.setSystem(system)
                     row.update()
@@ -51,7 +51,7 @@ class SimpleBoard(BaseBoard):
 
         if self.debugMode:
             endTime = time.perf_counter()
-            self.updateMetrics(endTime - startTime, len(self.rowObjs))
+            self.updateMetrics(endTime - startTime, len(self.rows))
 
     def updateTheme(self):
         super().updateTheme()
@@ -63,7 +63,7 @@ class FancyBoard(BaseBoard):
     def __init__(self, frame: tk.Frame):
         super().__init__(frame)
         self.colors = THEME1933
-        self.rowHeight = toPix(self.canvas, SIZE)/6
+        self.rowHeight = toPix(self.canvas, SIZE)/MAX_ROWS
         self.barHeight = self.rowHeight*1.5
         #hints
         self.hintsVar = tk.StringVar()
@@ -82,13 +82,20 @@ class FancyBoard(BaseBoard):
         canvas = self.canvas
         bar = self.bar
         routeSize = len(self.route)
+        
         #remove extra row object
-        while len(self.rowObjs) > routeSize:
-            row = self.rowObjs.pop()
+        while len(self.rows) > routeSize:
+            row = self.rows.pop()
             row.clear()
+        self.updateCurrentIndex()
+
+        totalRow = max(routeSize, 1)
+        self.resizeCanvas((0,0 ,self.size, self.rowHeight*totalRow), topOffset=self.barHeight, moveY=moveY)
+        if moveY:
+            self.updateBarPosition()
+
         #if no route
         if routeSize <= 0:
-            self.currentIndex = 0
             self.hideHints()
             if self.bulletLineObj: canvas.itemconfig(self.bulletLineObj, state=tk.HIDDEN)
             canvas.create_text(self.size/2, self.rowHeight/2+self.barHeight, text=NOROUTEFULL_STR, anchor=tk.CENTER, fill=self.colors["textMain"], font=('Helvetica', 12), justify=tk.CENTER, tags="noRoute")
@@ -98,37 +105,72 @@ class FancyBoard(BaseBoard):
             if not self.bulletLineObj:
                 self.bulletLineObj = canvas.create_line(self.rowHeight/2, self.rowHeight/2+self.barHeight, self.rowHeight/2, lineLength, fill=self.colors["main"], width="1.5p")
             else:
+                #show bulletLine
                 canvas.itemconfig(self.bulletLineObj, state=tk.NORMAL)
+                #resize bulletLine
                 canvas.coords(self.bulletLineObj, self.rowHeight/2, self.rowHeight/2+self.barHeight, self.rowHeight/2, lineLength)
-            #loop through route list
-            for index in range(routeSize):
-                rowOffset = self.rowHeight*(index) + self.barHeight
-                system = self.route[index]
-                system["distance"] = distance = getDistance(self.currentPos, system["pos"])
-                if distance <= 0: self.currentIndex = index
-                if index >= len(self.rowObjs):
-                    row = FancyRow(self, canvas, 0, rowOffset, self.size, self.rowHeight, index+1, system)
-                    row.draw()
-                    self.rowObjs.append(row)
-                else:
-                    row = self.rowObjs[index]
-                    row.setWidth(self.size)
-                    row.setSystem(system)
-                    row.update()
-                #if not bottom
-                notBottom = index+1 < routeSize
-                row.showBottomLine(notBottom)
+            self.updateRows()
         bar.setWidth(self.size)
-        if routeSize <= 0 or self.currentIndex >= routeSize-1: bar.updateText()
+        if self.currentIndex < 0 or self.currentIndex >= routeSize-1: bar.updateText()
         else:
             nextStopIndex = self.currentIndex+1
             bar.updateText(f"{nextStopIndex+1}. {self.route[nextStopIndex]["system"]}", routeSize-nextStopIndex)
-        totalRow = max(routeSize, 1)
-        self.resizeCanvas((0,0 ,self.size, self.rowHeight*totalRow), topOffset=self.barHeight, moveY=moveY)
 
         if self.debugMode:
             endTime = time.perf_counter()
-            self.updateMetrics(endTime - startTime, len(self.rowObjs))
+            self.updateMetrics(endTime - startTime, len(self.rows))
+
+    def updateRows(self):
+        if self.debugMode: startTime = time.perf_counter()
+        canvas = self.canvas
+        routeSize = len(self.route)
+
+        #size of the row pool
+        poolSize = min(routeSize, MAX_ROWS+1)
+        #current top Y after scrolling
+        top = canvas.canvasy(0)
+        #calculate how many row is scrolled
+        routeOffset = int(top//self.rowHeight)
+        #limit the offset to prevent list index out of bound
+        routeOffset = min(routeOffset, routeSize-poolSize)
+
+        #rearrange row objects to reduce the update call
+        if len(self.rows) > 0:
+            #how many row should rearrange
+            delta = self.rows[0].getIndex() - (routeOffset+1)
+            if delta != 0 and abs(delta) < len(self.rows):
+                for _ in range(abs(delta)):
+                    #pop the first if scroll down else last
+                    popIndex = 0 if delta < 0 else -1
+                    temp = self.rows.pop(popIndex)
+                    if delta < 0: self.rows.append(temp) #first to last
+                    else: self.rows.insert(0, temp) #last ot first
+        
+        #loop through route list
+        for rowIndex in range(poolSize):
+            routeIndex = rowIndex + routeOffset
+            rowPosOffset = self.rowHeight*(routeIndex) + self.barHeight
+            system = self.route[routeIndex]
+            system["distance"] = getDistance(self.currentPos, system["pos"])
+
+            if rowIndex >= len(self.rows):
+                row = FancyRow(self, canvas, 0, rowPosOffset, self.size, self.rowHeight, routeIndex+1, system)
+                row.draw()
+                self.rows.append(row)
+            else:
+                row = self.rows[rowIndex]
+                row.setWidth(self.size)
+                row.setPos(0, rowPosOffset)
+                row.setIndex(routeIndex+1)
+                row.setSystem(system)
+                row.update()
+            #if not bottom
+            notBottom = routeIndex+1 < routeSize
+            row.showBottomLine(notBottom)
+
+        if self.debugMode:
+            endTime = time.perf_counter()
+            self.updateMetrics(endTime - startTime, len(self.rows))
 
     def updateTheme(self):
         super().updateTheme()
@@ -136,15 +178,13 @@ class FancyBoard(BaseBoard):
     def updateBarPosition(self):
         x = self.canvas.canvasx(0)
         y = self.canvas.canvasy(0)
-        self.bar.moveTo(x, y)
+        self.bar.moveTo(x, y, True)
 
     def onCanvasScroll(self, event: tk.Event):
         super().onCanvasScroll(event)
-        self.updateBarPosition()
-
-    def resizeCanvas(self, bbox, topOffset=0, moveY=True):
-        super().resizeCanvas(bbox, topOffset, moveY)
-        if moveY: self.updateBarPosition()
+        if len(self.rows) > MAX_ROWS:
+            self.updateBarPosition()
+            self.updateRows()
 
     def showHints(self, x: int, y: int, text: str):
         canvas = self.canvas

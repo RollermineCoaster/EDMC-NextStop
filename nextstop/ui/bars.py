@@ -45,7 +45,7 @@ class FancyBar(BaseWidget):
         styles["min"]["options"]["text"] = minText
     
     def updateText(self, systemName="", jumps=0):
-        self.systemName = systemName
-        self.jumps = jumps
+        self._setter("systemName", systemName)
+        self._setter("jumps", jumps)
         if len(self.objs) <= 0: self.draw()
         else: self.update(True)

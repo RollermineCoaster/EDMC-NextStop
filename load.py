@@ -241,6 +241,7 @@ class NextStop:
             logger.debug("Route: "+str(route))
             self.setRoute(route)
             self.setCurrentPos(state["StarPos"])
+            self.ui.currentIndex = 0
             self.ui.updateCanvas()
             #stop all EDSM worker
             self.stopWorker.set()

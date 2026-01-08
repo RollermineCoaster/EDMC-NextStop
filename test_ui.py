@@ -1,4 +1,5 @@
 import sys
+from random import randint
 import tkinter as tk
 from unittest.mock import MagicMock
 
@@ -32,7 +33,7 @@ FR_PRIVATE = 0x10
 AddFontResourceEx(path.join(path.dirname(__file__), 'nextstop/assets/nextstop-logo.ttf'), FR_PRIVATE, 0)
 
 # NOW you can import your UI classes
-from nextstop.ui.boards import FancyBoard
+from nextstop.ui.boards import *
 
 # 1. Setup Mock Data
 MOCK_ROUTE_5 = [
@@ -44,7 +45,7 @@ MOCK_ROUTE_5 = [
 ]
 
 MOCK_ROUTE_12 = [
-    {"system": "Maia", "starClass": "B", "starTypeName": "Blue-White Giant", "pos": [-81, -177, -345], "id64": 101, "edsmUrl": "https://..."},
+    {"system": "Maia", "starClass": "B", "starTypeName": "Blue-White Giant", "pos": [0, 0, 0], "id64": 101, "edsmUrl": "https://..."},
     {"system": "Jackson's Lighthouse", "starClass": "N", "starTypeName": "Neutron Star", "pos": [174, -40, 48], "id64": 102, "edsmUrl": "https://..."},
     {"system": "Sagittarius A*", "starClass": "H", "starTypeName": "Supermassive Black Hole", "pos": [25, -11, 25899], "id64": 103, "edsmUrl": "https://..."},
     {"system": "Colonia", "starClass": "F", "starTypeName": "", "pos": [-1112, -47, 21330], "id64": 104, "edsmUrl": ""},
@@ -65,16 +66,14 @@ def generate_stress_route(length=120):
     for i in range(length):
         s_class = classes[i % len(classes)]
         route.append({
-            "system": f"STRESS-TEST-SYSTEM-{i:03}",
+            "system": f"STRESS-TEST-SYSTEM-{i:03}-{randint(0, 10)}",
             "starClass": s_class,
             "starTypeName": "Stress Test" if i % 10 == 0 else "",
-            "pos": [0, 0, i * 50],  # Systems spaced 50Ly apart
+            "pos": [0, 0, i * (50 + randint(0, 10))],  # Systems spaced 50Ly apart
             "edsmUrl": "https://www.edsm.net/" if i % 2 == 0 else "",
             "id64": 1000 + i
         })
     return route
-
-MOCK_ROUTE_120 = generate_stress_route(120)
 
 def run_test():
     root = tk.Tk()
@@ -84,23 +83,33 @@ def run_test():
 
     # Initialize your Board
     # You can switch between SimpleBoard and FancyBoard here to test both
-    board = FancyBoard(root) 
+    #board = SimpleBoard(root)
+    board = FancyBoard(root)
 
-    def next_jump():
-        if board.currentIndex < len(board.route) - 1:
+    def fake_jump(v):
+        if board.currentIndex+v < len(board.route):
             # Mocking the ship moving to the next system's position
-            target_pos = board.route[board.currentIndex+1]["pos"]
+            print("\nfake jump")
+            target_pos = board.route[board.currentIndex+v]["pos"]
             board.setCurrentPos(target_pos)
             board.updateCanvas()
+
+    def jump_out():
+        board.setCurrentPos([1,2,3])
+        board.updateCanvas()
 
     def set_route(route):
         board.setRoute(route)
         reset_route()
 
+    def jump_next(): fake_jump(1)
+    def jump_back(): fake_jump(-1)
+    def jump_next5(): fake_jump(5)
     def clear_route(): set_route([])
     def set_route5(): set_route(MOCK_ROUTE_5)
     def set_route12(): set_route(MOCK_ROUTE_12)
-    def set_route120(): set_route(MOCK_ROUTE_120)
+    def set_route120(): set_route(generate_stress_route(120))
+    def set_route1200(): set_route(generate_stress_route(1200))
 
     def reset_route():
         board.currentIndex = 0
@@ -112,12 +121,16 @@ def run_test():
     ctrl_frame.grid(row=1, column=0, sticky="ew")
 
     # Now you can use pack inside the frame because the frame has no other slaves yet!
-    tk.Button(ctrl_frame, text="Simulate Next Jump", command=next_jump).grid(row=0, column=0)
-    tk.Button(ctrl_frame, text="Reset Route", command=reset_route).grid(row=0, column=1)
-    tk.Button(ctrl_frame, text="Clear Route", command=clear_route).grid(row=1, column=0)
+    tk.Button(ctrl_frame, text="Jump Next", command=jump_next).grid(row=0, column=0)
+    tk.Button(ctrl_frame, text="Jump Back", command=jump_back).grid(row=0, column=1)
+    tk.Button(ctrl_frame, text="Jump Next5", command=jump_next5).grid(row=0, column=2)
+    tk.Button(ctrl_frame, text="Jump Out", command=jump_out).grid(row=1, column=0)
+    tk.Button(ctrl_frame, text="Reset Route", command=reset_route).grid(row=1, column=1)
+    tk.Button(ctrl_frame, text="Clear Route", command=clear_route).grid(row=1, column=2)
     tk.Button(ctrl_frame, text="Set Route 5", command=set_route5).grid(row=2, column=0)
     tk.Button(ctrl_frame, text="Set Route 12", command=set_route12).grid(row=3, column=0)
     tk.Button(ctrl_frame, text="Set Route 120", command=set_route120).grid(row=4, column=0)
+    tk.Button(ctrl_frame, text="Set Route 1200", command=set_route1200).grid(row=5, column=0)
 
     from load import plugin_prefs
     option_frame = plugin_prefs(root, "FAKE_CMDR", False)
