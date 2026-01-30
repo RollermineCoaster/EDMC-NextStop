@@ -71,6 +71,7 @@ class FancyBoard(BaseBoard):
         #hints and bulletLine canvas object id
         self.hintsObj = self.canvas.create_window(0, 0, tags="hints", window=self.hintsLabel, state=tk.HIDDEN, anchor=tk.S)
         self.bulletLineObj = ""
+        self.noRouteObj = ""
         self.bar = FancyBar(self, self.canvas, 0, 0, self.size, self.rowHeight*1.5)
         self.bar.draw()
         self.canvas.config(bg=self.colors["bg"])
@@ -98,9 +99,13 @@ class FancyBoard(BaseBoard):
         if routeSize <= 0:
             self.hideHints()
             if self.bulletLineObj: canvas.itemconfig(self.bulletLineObj, state=tk.HIDDEN)
-            canvas.create_text(self.size/2, self.rowHeight/2+self.barHeight, text=NOROUTEFULL_STR, anchor=tk.CENTER, fill=self.colors["textMain"], font=('Helvetica', 12), justify=tk.CENTER, tags="noRoute")
+            if not self.noRouteObj:
+                self.noRouteObj = canvas.create_text(self.size/2, self.rowHeight/2+self.barHeight, text=NOROUTEFULL_STR, anchor=tk.CENTER, fill=self.colors["textMain"], font=('Helvetica', 12), justify=tk.CENTER)
+            else:
+                canvas.itemconfig(self.noRouteObj, state=tk.NORMAL)
+                canvas.coords(self.noRouteObj, self.size/2, self.rowHeight/2+self.barHeight)
         else:
-            canvas.delete("noRoute")
+            if self.noRouteObj: canvas.itemconfig(self.noRouteObj, state=tk.HIDDEN)
             lineLength = self.rowHeight/2 + self.rowHeight*(routeSize-1) + self.barHeight
             if not self.bulletLineObj:
                 self.bulletLineObj = canvas.create_line(self.rowHeight/2, self.rowHeight/2+self.barHeight, self.rowHeight/2, lineLength, fill=self.colors["main"], width="1.5p")
