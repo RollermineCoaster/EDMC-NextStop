@@ -1,0 +1,693 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="300"
+   height="300"
+   viewBox="0 0 79.374998 79.375005"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+   sodipodi:docname="EDMC_NextStop_UI.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     units="px"
+     inkscape:zoom="2"
+     inkscape:cx="137"
+     inkscape:cy="151.25"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="1072"
+     inkscape:window-y="832"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <rect
+       x="50.5"
+       y="39.5"
+       width="210.5"
+       height="21"
+       id="rect17155" />
+    <rect
+       x="248"
+       y="321"
+       width="51.999999"
+       height="54"
+       id="rect127128" />
+    <rect
+       x="258"
+       y="41.5"
+       width="77.813709"
+       height="64.662951"
+       id="rect96597" />
+    <rect
+       x="210.5"
+       y="20.5"
+       width="78"
+       height="26"
+       id="rect71261" />
+    <rect
+       x="-135.7645"
+       y="-36.769553"
+       width="202.23254"
+       height="36.062446"
+       id="rect50118" />
+    <rect
+       x="40"
+       y="227"
+       width="271"
+       height="70"
+       id="rect29248" />
+    <rect
+       x="49"
+       y="138"
+       width="253"
+       height="51"
+       id="rect27748" />
+    <rect
+       x="46"
+       y="34"
+       width="263"
+       height="75"
+       id="rect25896" />
+    <rect
+       x="46"
+       y="-54"
+       width="228"
+       height="61"
+       id="rect23188" />
+    <rect
+       x="49"
+       y="-118"
+       width="201"
+       height="52"
+       id="rect8034" />
+    <rect
+       x="32"
+       y="16"
+       width="131"
+       height="60"
+       id="rect4032" />
+    <rect
+       x="-135.7645"
+       y="-36.769554"
+       width="202.23254"
+       height="36.062447"
+       id="rect50118-5" />
+    <rect
+       x="-135.7645"
+       y="-36.769554"
+       width="202.23254"
+       height="36.062447"
+       id="rect50118-2" />
+    <rect
+       x="-135.7645"
+       y="-36.769554"
+       width="202.23254"
+       height="36.062447"
+       id="rect50118-8" />
+    <rect
+       x="-135.7645"
+       y="-36.769554"
+       width="202.23254"
+       height="36.062447"
+       id="rect50118-81" />
+    <rect
+       x="210.5"
+       y="20.5"
+       width="78"
+       height="26"
+       id="rect71261-1" />
+    <rect
+       x="210.5"
+       y="20.5"
+       width="78"
+       height="26"
+       id="rect71261-1-1" />
+    <rect
+       x="210.5"
+       y="20.5"
+       width="78"
+       height="26"
+       id="rect71261-1-6" />
+    <rect
+       x="210.5"
+       y="20.5"
+       width="78"
+       height="26"
+       id="rect71261-1-7" />
+    <rect
+       x="258"
+       y="41.5"
+       width="66.5"
+       height="38.5"
+       id="rect96597-4" />
+    <rect
+       x="258"
+       y="41.5"
+       width="66.5"
+       height="38.5"
+       id="rect96597-47" />
+    <rect
+       x="258"
+       y="41.5"
+       width="66.5"
+       height="38.5"
+       id="rect96597-45" />
+    <rect
+       x="258"
+       y="41.5"
+       width="66.5"
+       height="38.5"
+       id="rect96597-1" />
+    <rect
+       x="258"
+       y="41.5"
+       width="66.5"
+       height="38.5"
+       id="rect96597-2" />
+    <rect
+       x="258"
+       y="41.5"
+       width="66.5"
+       height="38.5"
+       id="rect96597-27" />
+    <rect
+       x="258"
+       y="41.5"
+       width="66.5"
+       height="38.5"
+       id="rect96597-3" />
+    <rect
+       x="258"
+       y="41.5"
+       width="66.5"
+       height="38.5"
+       id="rect96597-3-1" />
+    <rect
+       x="49"
+       y="-118"
+       width="201"
+       height="52"
+       id="rect8034-8" />
+    <rect
+       x="210.5"
+       y="20.5"
+       width="78"
+       height="26"
+       id="rect71261-6" />
+    <rect
+       x="258"
+       y="41.5"
+       width="77.813705"
+       height="64.662949"
+       id="rect96597-6" />
+    <rect
+       x="50.5"
+       y="39.5"
+       width="210.5"
+       height="21"
+       id="rect17155-2" />
+    <rect
+       x="49"
+       y="-118"
+       width="201"
+       height="52"
+       id="rect8034-7" />
+    <rect
+       x="210.5"
+       y="20.5"
+       width="78"
+       height="26"
+       id="rect71261-2" />
+    <rect
+       x="258"
+       y="41.5"
+       width="77.813705"
+       height="64.662949"
+       id="rect96597-20" />
+    <rect
+       x="50.5"
+       y="39.5"
+       width="210.5"
+       height="21"
+       id="rect17155-8" />
+    <rect
+       x="49"
+       y="-118"
+       width="201"
+       height="52"
+       id="rect8034-2" />
+    <rect
+       x="210.5"
+       y="20.5"
+       width="78"
+       height="26"
+       id="rect71261-7" />
+    <rect
+       x="258"
+       y="41.5"
+       width="77.813705"
+       height="64.662949"
+       id="rect96597-278" />
+    <rect
+       x="50.5"
+       y="39.5"
+       width="210.5"
+       height="21"
+       id="rect17155-4" />
+    <rect
+       x="49"
+       y="-118"
+       width="201"
+       height="52"
+       id="rect8034-4" />
+    <rect
+       x="210.5"
+       y="20.5"
+       width="78"
+       height="26"
+       id="rect71261-79" />
+    <rect
+       x="258"
+       y="41.5"
+       width="77.813705"
+       height="64.662949"
+       id="rect96597-0" />
+    <rect
+       x="50.5"
+       y="39.5"
+       width="210.5"
+       height="21"
+       id="rect17155-7" />
+    <rect
+       x="49"
+       y="-118"
+       width="201"
+       height="52"
+       id="rect8034-6" />
+    <rect
+       x="210.5"
+       y="20.5"
+       width="78"
+       height="26"
+       id="rect71261-8" />
+    <rect
+       x="258"
+       y="41.5"
+       width="77.813705"
+       height="64.662949"
+       id="rect96597-08" />
+    <rect
+       x="50.5"
+       y="39.5"
+       width="210.5"
+       height="21"
+       id="rect17155-6" />
+    <rect
+       x="49"
+       y="-118"
+       width="201"
+       height="52"
+       id="rect8034-63" />
+    <rect
+       x="210.5"
+       y="20.5"
+       width="78"
+       height="26"
+       id="rect71261-82" />
+    <rect
+       x="258"
+       y="41.5"
+       width="77.813705"
+       height="64.662949"
+       id="rect96597-7" />
+    <rect
+       x="50.5"
+       y="39.5"
+       width="210.5"
+       height="21"
+       id="rect17155-44" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:7.5276;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
+       id="rect868"
+       width="79.375"
+       height="11.339286"
+       x="-2.220446e-16"
+       y="0" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6329751,32.760143)"
+       id="text8032"
+       style="font-style:normal;font-weight:normal;font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect8034);fill:#000000;fill-opacity:1;stroke:none"><tspan
+         x="49"
+         y="-103.40271"
+         id="tspan54445">1. CEMIESS</tspan></text>
+    <circle
+       style="fill:#ff0101;fill-opacity:1;stroke:#ff0101;stroke-width:0.529167;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       id="path47172-0"
+       cx="5.6697564"
+       cy="5.6697564"
+       r="1.4173729" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.8671301,-3.7935807)"
+       id="text71259"
+       style="font-size:14px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect71261);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="210.5"
+         y="33.272624"
+         id="tspan54447">CURRENT</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.2961055,-5.7012392)"
+       id="text96595"
+       style="font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect96597);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="258"
+         y="57.578125"
+         id="tspan54449">+💧</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6334919,-4.131863)"
+       id="text17153"
+       style="font-size:12px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect17155);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="50.5"
+         y="50.447964"
+         id="tspan54451">G (White-Yellow) Star</tspan></text>
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:7.5276;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
+       id="rect868-3"
+       width="79.375"
+       height="11.339286"
+       x="-2.220446e-16"
+       y="11.339286" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6329751,44.099429)"
+       id="text8032-7"
+       style="font-style:normal;font-weight:normal;font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect8034-8);fill:#000000;fill-opacity:1;stroke:none"><tspan
+         x="49"
+         y="-103.40271"
+         id="tspan54453">2. Core Sys Sector </tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.8671301,7.5457053)"
+       id="text71259-7"
+       style="font-size:14px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect71261-6);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="210.5"
+         y="33.272624"
+         id="tspan54455">CURRENT</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.2961055,5.6380468)"
+       id="text96595-7"
+       style="font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect96597-6);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="258"
+         y="57.578125"
+         id="tspan54457">+💧</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6334919,7.207423)"
+       id="text17153-7"
+       style="font-size:12px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect17155-2);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="50.5"
+         y="50.447964"
+         id="tspan54459">White Dwarf (DBZ) Star</tspan></text>
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:7.5276;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
+       id="rect868-2"
+       width="79.375"
+       height="11.339286"
+       x="-2.220446e-16"
+       y="22.678572" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6329751,55.438715)"
+       id="text8032-5"
+       style="font-style:normal;font-weight:normal;font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect8034-7);fill:#000000;fill-opacity:1;stroke:none"><tspan
+         x="49"
+         y="-103.40271"
+         id="tspan54461">1. CEMIESS</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.8671301,18.884991)"
+       id="text71259-4"
+       style="font-size:14px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect71261-2);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="210.5"
+         y="33.272624"
+         id="tspan54463">CURRENT</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.2961055,16.977333)"
+       id="text96595-2"
+       style="font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect96597-20);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="258"
+         y="57.578125"
+         id="tspan54465">+💧</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6334919,18.546709)"
+       id="text17153-9"
+       style="font-size:12px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect17155-8);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="50.5"
+         y="50.447964"
+         id="tspan54467">G (White-Yellow) Star</tspan></text>
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:7.5276;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
+       id="rect868-5"
+       width="79.375"
+       height="11.339286"
+       x="-2.220446e-16"
+       y="34.017857" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6329751,66.778001)"
+       id="text8032-56"
+       style="font-style:normal;font-weight:normal;font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect8034-2);fill:#000000;fill-opacity:1;stroke:none"><tspan
+         x="49"
+         y="-103.40271"
+         id="tspan54469">1. CEMIESS</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.8671301,30.224277)"
+       id="text71259-2"
+       style="font-size:14px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect71261-7);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="210.5"
+         y="33.272624"
+         id="tspan54471">CURRENT</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.2961055,28.316619)"
+       id="text96595-1"
+       style="font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect96597-278);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="258"
+         y="57.578125"
+         id="tspan54473">+💧</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6334919,29.885995)"
+       id="text17153-4"
+       style="font-size:12px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect17155-4);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="50.5"
+         y="50.447964"
+         id="tspan54475">G (White-Yellow) Star</tspan></text>
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:7.5276;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
+       id="rect868-53"
+       width="79.375"
+       height="11.339286"
+       x="-2.220446e-16"
+       y="45.357143" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6329751,78.117287)"
+       id="text8032-3"
+       style="font-style:normal;font-weight:normal;font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect8034-4);fill:#000000;fill-opacity:1;stroke:none"><tspan
+         x="49"
+         y="-103.40271"
+         id="tspan54477">1. CEMIESS</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.8671301,41.563563)"
+       id="text71259-9"
+       style="font-size:14px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect71261-79);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="210.5"
+         y="33.272624"
+         id="tspan54479">CURRENT</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.2961055,39.655905)"
+       id="text96595-3"
+       style="font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect96597-0);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="258"
+         y="57.578125"
+         id="tspan54481">+💧</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6334919,41.225281)"
+       id="text17153-2"
+       style="font-size:12px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect17155-7);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="50.5"
+         y="50.447964"
+         id="tspan54483">G (White-Yellow) Star</tspan></text>
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:7.5276;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
+       id="rect868-59"
+       width="79.375"
+       height="11.339286"
+       x="-2.220446e-16"
+       y="56.69643" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6329751,89.456573)"
+       id="text8032-4"
+       style="font-style:normal;font-weight:normal;font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect8034-6);fill:#000000;fill-opacity:1;stroke:none"><tspan
+         x="49"
+         y="-103.40271"
+         id="tspan54485">1. CEMIESS</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.8671301,52.902849)"
+       id="text71259-6"
+       style="font-size:14px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect71261-8);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="210.5"
+         y="33.272624"
+         id="tspan54487">CURRENT</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.2961055,50.995191)"
+       id="text96595-4"
+       style="font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect96597-08);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="258"
+         y="57.578125"
+         id="tspan54489">+💧</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6334919,52.564567)"
+       id="text17153-3"
+       style="font-size:12px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect17155-6);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="50.5"
+         y="50.447964"
+         id="tspan54491">G (White-Yellow) Star</tspan></text>
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:7.5276;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
+       id="rect868-538"
+       width="79.375"
+       height="11.339286"
+       x="-2.220446e-16"
+       y="68.035713" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6329751,100.79586)"
+       id="text8032-2"
+       style="font-style:normal;font-weight:normal;font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect8034-63);fill:#000000;fill-opacity:1;stroke:none"><tspan
+         x="49"
+         y="-103.40271"
+         id="tspan54493">1. CEMIESS</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.8671301,64.242135)"
+       id="text71259-1"
+       style="font-size:14px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect71261-82);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="210.5"
+         y="33.272624"
+         id="tspan54495">CURRENT</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.2961055,62.334477)"
+       id="text96595-28"
+       style="font-size:16px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect96597-7);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="258"
+         y="57.578125"
+         id="tspan54497">+💧</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-1.6334919,63.903853)"
+       id="text17153-98"
+       style="font-size:12px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect17155-44);fill:#4d4d4d;fill-opacity:1"><tspan
+         x="50.5"
+         y="50.447964"
+         id="tspan54499">G (White-Yellow) Star</tspan></text>
+    <path
+       style="fill:none;stroke:#7f7f7f;stroke-width:0.270335px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 1.9843749,11.339286 H 77.390625"
+       id="path36865" />
+    <path
+       style="fill:none;stroke:#7f7f7f;stroke-width:0.270335px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 1.984375,22.678572 h 75.40625"
+       id="path36865-4" />
+    <path
+       style="fill:none;stroke:#7f7f7f;stroke-width:0.270335px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 1.9843748,34.017858 H 77.390625"
+       id="path36865-5" />
+    <path
+       style="fill:none;stroke:#7f7f7f;stroke-width:0.270335px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 1.9843749,45.357144 H 77.390625"
+       id="path36865-9" />
+    <path
+       style="fill:none;stroke:#7f7f7f;stroke-width:0.270335px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 1.984375,56.69643 h 75.40625"
+       id="path36865-9-5" />
+    <path
+       style="fill:none;stroke:#7f7f7f;stroke-width:0.270335px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 1.984375,68.035716 h 75.40625"
+       id="path36865-9-9" />
+    <path
+       style="fill:none;stroke:#ff0000;stroke-width:0.54774;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 5.6697564,5.9343396 V 73.970054"
+       id="path47846" />
+    <circle
+       style="fill:#b2b2b2;fill-opacity:1;stroke:#808080;stroke-width:0.529167;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       id="path47172-0-4"
+       cx="5.6697564"
+       cy="17.009043"
+       r="1.4173729" />
+    <circle
+       style="fill:#b2b2b2;fill-opacity:1;stroke:#808080;stroke-width:0.529167;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       id="path47172-0-9"
+       cx="5.6697564"
+       cy="28.348328"
+       r="1.4173729" />
+    <circle
+       style="fill:#b2b2b2;fill-opacity:1;stroke:#808080;stroke-width:0.529167;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       id="path47172-0-48"
+       cx="5.6697564"
+       cy="39.687614"
+       r="1.4173729" />
+    <circle
+       style="fill:#b2b2b2;fill-opacity:1;stroke:#808080;stroke-width:0.529167;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       id="path47172-0-3"
+       cx="5.6697564"
+       cy="51.026901"
+       r="1.4173729" />
+    <circle
+       style="fill:#b2b2b2;fill-opacity:1;stroke:#808080;stroke-width:0.529167;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       id="path47172-0-33"
+       cx="5.6697564"
+       cy="62.366188"
+       r="1.4173729" />
+    <circle
+       style="fill:#b2b2b2;fill-opacity:1;stroke:#808080;stroke-width:0.529167;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       id="path47172-0-6"
+       cx="5.6697564"
+       cy="73.705475"
+       r="1.4173729" />
+  </g>
+</svg>

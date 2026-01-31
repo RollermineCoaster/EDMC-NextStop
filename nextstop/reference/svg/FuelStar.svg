@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+   sodipodi:docname="FuelStar.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="px"
+     showgrid="false"
+     units="px"
+     inkscape:zoom="0.74118967"
+     inkscape:cx="176.74288"
+     inkscape:cy="347.41445"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="1072"
+     inkscape:window-y="832"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke:#f0f0f0;stroke-width:31.7656;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       id="rect17417"
+       width="480.2345"
+       height="480.23444"
+       x="15.882751"
+       y="15.882753" />
+    <path
+       style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 211.88571,144.24591 173.76637,264.95608 53.057375,303.0735 173.76637,341.19333 211.88501,461.90107 250.00363,341.19333 370.71332,303.0735 250.00363,264.95608 Z"
+       id="path904"
+       sodipodi:nodetypes="ccccccccc" />
+    <path
+       id="path16082"
+       style="fill:#ffffff;fill-opacity:1;stroke:#f0f0f0;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 376.39547,74.166025 c -18.29858,20.637532 -63.53105,86.229425 -63.53105,127.062075 0,36.93776 37.26026,54.00139 63.53105,54.00139 26.27081,0 63.53103,-17.06363 63.53103,-54.00139 0,-40.83265 -45.23242,-106.424543 -63.53103,-127.062075 z" />
+  </g>
+</svg>
