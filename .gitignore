@@ -1,2 +1,6 @@
 
 *.pyc
+lib/*
+system_cache.json
+/nextstop/reference/img
+test.py
