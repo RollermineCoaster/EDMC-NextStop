@@ -8,7 +8,17 @@ mock_config = MagicMock()
 # Define default return values for methods your code calls
 mock_config.config.get_int.return_value = 1
 mock_config.config.get_str.return_value = "Simple"
+mock_config.appname = "test_ui"
 sys.modules["config"] = mock_config
+
+import logging
+logger = logging.getLogger("test_ui.EDMC-NextStop")
+logger.setLevel(logging.DEBUG)
+
+class PrintLog(logging.Handler):
+    def emit(self, record):
+        msg = self.format(record)
+        print(msg)
 
 # 2. Mock the 'theme' module (if you haven't already)
 mock_theme = MagicMock()
@@ -76,6 +86,7 @@ def generate_stress_route(length=120):
     return route
 
 def run_test():
+
     root = tk.Tk()
     root.title("NextStop UI Test Bench")
     root.geometry("300x600")
@@ -87,19 +98,22 @@ def run_test():
     board = FancyBoard(root)
 
     def fake_jump(v):
-        if board.currentIndex+v < len(board.route):
+        if board.current_index+v < len(board.route):
             # Mocking the ship moving to the next system's position
             print("\nfake jump")
-            target_pos = board.route[board.currentIndex+v]["pos"]
-            board.setCurrentPos(target_pos)
-            board.updateCanvas()
+            target_pos = board.route[board.current_index+v]["pos"]
+            board.set_current_pos(target_pos)
+            board.update_canvas()
+
+    def update_canvas():
+        board.update_canvas()
 
     def jump_out():
-        board.setCurrentPos([1,2,3])
-        board.updateCanvas()
+        board.set_current_pos([1,2,3])
+        board.update_canvas()
 
     def set_route(route):
-        board.setRoute(route)
+        board.set_route(route)
         reset_route()
 
     def jump_next(): fake_jump(1)
@@ -112,9 +126,9 @@ def run_test():
     def set_route1200(): set_route(generate_stress_route(1200))
 
     def reset_route():
-        board.currentIndex = 0
-        board.setCurrentPos([0, 0, 0])
-        board.updateCanvas()
+        board.current_index = 0
+        board.set_current_pos([0, 0, 0])
+        board.update_canvas()
 
     # Create a dedicated frame for test controls
     ctrl_frame = tk.Frame(root)
@@ -128,6 +142,7 @@ def run_test():
     tk.Button(ctrl_frame, text="Reset Route", command=reset_route).grid(row=1, column=1)
     tk.Button(ctrl_frame, text="Clear Route", command=clear_route).grid(row=1, column=2)
     tk.Button(ctrl_frame, text="Set Route 5", command=set_route5).grid(row=2, column=0)
+    tk.Button(ctrl_frame, text="Update Canvas", command=update_canvas).grid(row=2, column=1)
     tk.Button(ctrl_frame, text="Set Route 12", command=set_route12).grid(row=3, column=0)
     tk.Button(ctrl_frame, text="Set Route 120", command=set_route120).grid(row=4, column=0)
     tk.Button(ctrl_frame, text="Set Route 1200", command=set_route1200).grid(row=5, column=0)
@@ -137,11 +152,22 @@ def run_test():
     option_frame.grid(row=2, column=0)
 
     # Trigger the Draw
-    board.updateCanvas()
+    board.update_canvas()
 
     print("Test UI Started. Close window to exit.")
-    print(f"Debug: {board.debugMode}")
+    print(f"Debug: {board.debug_mode}")
     root.mainloop()
 
 if __name__ == "__main__":
+
+    # 2. Initialize our custom handler
+    text_handler = PrintLog()
+
+    # Optional: Set a format for the logs
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    text_handler.setFormatter(formatter)
+
+    # 3. Add the handler to your plugin's logger
+    logger.addHandler(text_handler)
+
     run_test()

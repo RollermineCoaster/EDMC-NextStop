@@ -8,7 +8,6 @@ import tkinter as tk
 from typing import Optional
 from threading import Thread, RLock, Event
 import time
-import requests
 import copy
 import json
 from os import path
@@ -20,10 +19,12 @@ AddFontResourceEx.restypes = [LPCWSTR, DWORD, LPCVOID]  # type: ignore
 FR_PRIVATE = 0x10
 AddFontResourceEx(path.join(path.dirname(__file__), 'nextstop/assets/nextstop-logo.ttf'), FR_PRIVATE, 0)
 
-from nextstop.ui.boards import SimpleBoard, FancyBoard
+import requests
 
-import myNotebook as nb  # noqa: N813
+import myNotebook as nb
 from config import appname, config
+
+from nextstop.ui.boards import SimpleBoard, FancyBoard
 
 # This **MUST** match the name of the folder the plugin is in.
 PLUGIN_NAME = "EDMC-NextStop"
@@ -33,7 +34,7 @@ CACHE_LIMIT = 2000
 logger = logging.getLogger(f"{appname}.{PLUGIN_NAME}")
 
 class NextStop:
-
+    """NextStop plugin class"""
     def __init__(self) -> None:
         #display mode
         self.MODES = ["Simple", "Fancy"]
@@ -44,93 +45,103 @@ class NextStop:
             config.set('nextStop_Mode', self.MODES[0])
         #config variable
         self.mode = tk.StringVar(value=config.get_str('nextStop_Mode'))
-        self.debugMode = tk.IntVar(value=config.get_int('nextStop_DebugMode'))
+        self.debug_mode = tk.IntVar(value=config.get_int('nextStop_DebugMode'))
         #init module
         self.ui = None
         self.frame = None
-        logger.debug(f"Config: nextStop_Mode = {self.mode.get()}, nextStop_DebugMode = {self.debugMode.get()}")
+        logger.debug("Config: nextStop_Mode = %s, nextStop_DebugMode = %s", self.mode.get(), self.debug_mode.get())
         #get info from DCoH using thread
-        thread = Thread(target=DCoHWorker, name='DCoH worker')
+        thread = Thread(target=dcoh_worker, name='DCoH worker')
         thread.daemon = True
         thread.start()
         #thread lock for cache
-        self.cacheLock = RLock()
+        self.cache_lock = RLock()
         #kill switch for worker
-        self.stopWorker = Event()
+        self.stop_worker = Event()
         #cache
-        pluginDir = path.join(config.plugin_dir, PLUGIN_NAME)
-        self.cachePath = path.join(pluginDir, "system_cache.json")
-        self.systemCache = {}
-        self.loadCache()
+        plugin_dir = path.join(config.plugin_dir, PLUGIN_NAME)
+        self.cache_path = path.join(plugin_dir, "system_cache.json")
+        self.system_cache = {}
+        self.load_cache()
         logger.info("NextStop instantiated")
 
-    def getFromCache(self, id64):
-        with self.cacheLock:
-            starType = self.systemCache.get(str(id64), "")
-            if starType:
-                self.updateCache(id64, starType)
-            return starType
+    def get_from_cache(self, id64):
+        """Get system data from cache using id64"""
+        with self.cache_lock:
+            star_type = self.system_cache.get(str(id64), "")
+            if star_type:
+                self.update_cache(id64, star_type)
+            return star_type
 
-    def updateCache(self, id64, starType):
-        with self.cacheLock:
+    def update_cache(self, id64, star_type):
+        """Update system data in cache using id64"""
+        with self.cache_lock:
             key = str(id64)
-            self.systemCache.pop(key, "")
-            self.systemCache[key] = starType
-            if len(self.systemCache) > 0 and len(self.systemCache) > CACHE_LIMIT:
-                firstKey = next(iter(self.systemCache))
-                del self.systemCache[firstKey]
+            self.system_cache.pop(key, "")
+            self.system_cache[key] = star_type
+            if len(self.system_cache) > 0 and len(self.system_cache) > CACHE_LIMIT:
+                first_key = next(iter(self.system_cache))
+                del self.system_cache[first_key]
 
-    def loadCache(self):
+    def load_cache(self):
+        """Load system cache from disk"""
         try:
-            if path.exists(self.cachePath):
-                with open(self.cachePath, "r") as file:
-                    self.systemCache = json.load(file)
+            if path.exists(self.cache_path):
+                with open(self.cache_path, "r", encoding="utf-8") as file:
+                    self.system_cache = json.load(file)
         except Exception as e:
-            logger.error(f"Failed to load system cache! {e}")
+            logger.error("Failed to load system cache! %s", e)
 
-    def saveCache(self):
+    def save_cache(self):
+        """Save system cache to disk"""
         try:
-            with self.cacheLock:
-                with open(self.cachePath, "w") as file:
-                    json.dump(self.systemCache, file)
+            with self.cache_lock:
+                with open(self.cache_path, "w", encoding="utf-8") as file:
+                    json.dump(self.system_cache, file)
         except Exception as e:
-            logger.error(f"Failed to save system cache! {e}")
+            logger.error("Failed to save system cache! %s", e)
 
-    def getRoute(self):
+    def get_route(self):
+        """Get current route from board class"""
         if not self.ui:
-            logger.error("Failed to getRoute! UI module is None.")
+            logger.error("Failed to get_route! UI module is None.")
         else:
-            return self.ui.getRoute()
+            return self.ui.get_route()
 
-    def setRoute(self, route):
+    def set_route(self, route):
+        """Set route"""
         if not self.ui:
-            logger.error("Failed to setRoute! UI module is None.")
+            logger.error("Failed to set_route! UI module is None.")
         else:
-            self.ui.setRoute(route)
+            self.ui.set_route(route)
 
-    def getThargoidSystems(self):
+    def get_thargoid_systems(self):
+        """Get current thargoid system list"""
         if not self.ui:
-            logger.error("Failed to getThargoidSystems! UI module is None.")
+            logger.error("Failed to get_thargoid_systems! UI module is None.")
         else:
-            return self.ui.getThargoidSystems()
+            return self.ui.get_thargoid_systems()
 
-    def setThargoidSystems(self, thargoidSystems):
+    def set_thargoid_systems(self, thargoid_systems):
+        """Set thargoid system list"""
         if not self.ui:
-            logger.error("Failed to setThargoidSystems! UI module is None.")
+            logger.error("Failed to set_thargoid_systems! UI module is None.")
         else:
-            self.ui.setThargoidSystems(thargoidSystems)
+            self.ui.set_thargoid_systems(thargoid_systems)
 
-    def getCurrentPos(self):
+    def get_current_pos(self):
+        """Get current position from board class"""
         if not self.ui:
-            logger.error("Failed to getCurrentPos! UI module is None.")
+            logger.error("Failed to get_current_pos! UI module is None.")
         else:
-            return self.ui.getCurrentPos()
+            return self.ui.get_current_pos()
 
-    def setCurrentPos(self, currentPos):
+    def set_current_pos(self, current_pos):
+        """Set current position"""
         if not self.ui:
-            logger.error("Failed to setCurrentPos! UI module is None.")
+            logger.error("Failed to set_current_pos! UI module is None.")
         else:
-            self.ui.setCurrentPos(currentPos)
+            self.ui.set_current_pos(current_pos)
 
     def on_load(self) -> str:
         """
@@ -145,9 +156,9 @@ class NextStop:
         on_unload is called by plugin_stop below.
         It is the last thing called before EDMC shuts down. Note that blocking code here will hold the shutdown process.
         """
-        self.stopWorker.set() #stop all EDSM worker
+        self.stop_worker.set() #stop all EDSM worker
         self.on_preferences_closed("", False)  # Save our prefs
-        self.saveCache()
+        self.save_cache()
 
     def setup_preferences(self, parent: nb.Notebook, cmdr: str, is_beta: bool) -> Optional[tk.Frame]:
         """
@@ -162,12 +173,12 @@ class NextStop:
         frame = nb.Frame(parent)
 
         # setup our config
-        #mode
+        # mode
         nb.Label(frame, text='Mode: ').grid(row=current_row, column=0, sticky=tk.W)
         nb.OptionMenu(frame, self.mode, self.mode.get(), *self.MODES).grid(row=current_row, column=1, sticky=tk.W)
         current_row += 1  # Always increment our row counter, makes for far easier tkinter design.
         nb.Label(frame, text='Debug: ').grid(row=current_row, column=0, sticky=tk.W)
-        nb.Checkbutton(frame, text='Show Performance Metrics', variable=self.debugMode).grid(row=current_row, column=1, sticky=tk.W)
+        nb.Checkbutton(frame, text='Show Performance Metrics', variable=self.debug_mode).grid(row=current_row, column=1, sticky=tk.W)
         return frame
 
     def on_preferences_closed(self, cmdr: str, is_beta: bool) -> None:
@@ -177,25 +188,25 @@ class NextStop:
         :param cmdr: The current ED Commander
         :param is_beta: Whether or not EDMC is currently marked as in beta mode
         """
-        config.set('nextStop_DebugMode', self.debugMode.get())
-        self.ui.updateDebugObject()
+        config.set('nextStop_DebugMode', self.debug_mode.get())
+        self.ui.update_debug_state()
         mode = self.mode.get()
         config.set('nextStop_Mode', mode)
         if mode == self.SIMPLEMODE and not isinstance(self.ui, SimpleBoard) or mode == self.FANCYMODE and not isinstance(self.ui, FancyBoard):
             logger.info("Updating board with new settings.")
             #get route, current pos and thargoid systems from old board
-            route = self.getRoute()
-            currentPos = self.getCurrentPos()
-            thargoidSystems = self.getThargoidSystems()
+            route = self.get_route()
+            current_pos = self.get_current_pos()
+            thargoid_systems = self.get_thargoid_systems()
             #destory old board
             self.ui.destroy()
             #make a new board
-            self.createBoard()
-            self.setRoute(route)
-            self.setCurrentPos(currentPos)
-            self.setThargoidSystems(thargoidSystems)
-            self.ui.updateCanvas()
-        self.ui.updateTheme()
+            self.create_board()
+            self.set_route(route)
+            self.set_current_pos(current_pos)
+            self.set_thargoid_systems(thargoid_systems)
+            self.ui.update_canvas()
+        self.ui.update_theme()
 
     def setup_main_ui(self, parent: tk.Frame) -> tk.Frame:
         """
@@ -208,13 +219,14 @@ class NextStop:
         #plugin frame
         self.frame = frame = tk.Frame(parent)
         frame.grid_propagate(False)
-        #bing a custom event to canvas for updateCanvas
-        frame.bind('<<EDSMUpdate>>', lambda event : self.ui.updateCanvas())
-        self.createBoard()
-        self.ui.updateCanvas()
+        #bing a custom event to canvas for update_canvas
+        frame.bind('<<EDSMUpdate>>', lambda event : self.ui.update_canvas())
+        self.create_board()
+        self.ui.update_canvas()
         return frame
 
-    def createBoard(self):
+    def create_board(self):
+        """Create the board class based on the current mode settings"""
         if self.mode.get() == self.SIMPLEMODE:
             logger.info("Display in simple mode.")
             self.ui = SimpleBoard(self.frame)
@@ -222,7 +234,8 @@ class NextStop:
             logger.info("Display in fancy mode.")
             self.ui = FancyBoard(self.frame)
 
-    def onEvent(self, cmdr: str, is_beta: bool, system: str, station: str, entry: dict, state: dict) -> Optional[str]:
+    def on_event(self, cmdr: str, is_beta: bool, system: str, station: str, entry: dict, state: dict) -> Optional[str]:
+        """Update the board when journal update"""
         if entry["event"] == "StartUp" and state["NavRoute"]["event"] == "NavRoute" or entry["event"] == "NavRoute":
             logger.info("Route detected! Updating UI.")
             #clear route list
@@ -238,17 +251,17 @@ class NextStop:
                 temp["edsmUrl"] = ""
                 temp["starClass"] = dest["StarClass"]
                 route.append(temp)
-            logger.debug("Route: "+str(route))
-            self.setRoute(route)
-            self.setCurrentPos(state["StarPos"])
-            self.ui.currentIndex = 0
-            self.ui.updateCanvas()
+            logger.debug("Route: %s", str(route))
+            self.set_route(route)
+            self.set_current_pos(state["StarPos"])
+            self.ui.current_index = 0
+            self.ui.update_canvas()
             #stop all EDSM worker
-            self.stopWorker.set()
-            self.stopWorker.clear()
+            self.stop_worker.set()
+            self.stop_worker.clear()
             #get info from EDSM using thread
             logger.info('Starting worker thread.')
-            thread = Thread(target=EDSMworker, name='EDSM worker')
+            thread = Thread(target=edsm_worker, name='EDSM worker')
             thread.daemon = True
             thread.start()
             logger.debug('NavRoute event handled.')
@@ -256,8 +269,8 @@ class NextStop:
             logger.info("Route clear! Updating UI.")
             if not self.ui.jumping:
                 #clear route list
-                self.setRoute([])
-                self.ui.updateCanvas()
+                self.set_route([])
+                self.ui.update_canvas()
         elif entry["event"] == "StartJump" and entry["JumpType"] == "Hyperspace":
             logger.info("Jumping to another system.")
             self.ui.jumping = True
@@ -265,99 +278,104 @@ class NextStop:
             logger.info("Arrived at another system. Updating current position.")
             self.ui.jumping = False
             #update current pos
-            self.setCurrentPos(entry["StarPos"])
-            self.ui.updateCanvas()
+            self.set_current_pos(entry["StarPos"])
+            self.ui.update_canvas()
 
-def EDSMworker() -> None:
+def edsm_worker() -> None:
+    """Get system data from EDSM"""
     try:
         logger.debug("Worker starting.")
         url = "https://www.edsm.net/api-v1/systems"
-        logger.debug("URL: "+url)
+        logger.debug("URL: %s", url)
         param = {"showId":1, "showPrimaryStar":1, "systemName":[]}
-        appRoute = app.getRoute()
+        app_route = app.get_route()
         #if no route
-        if len(appRoute) <= 0:
+        if len(app_route) <= 0:
             logger.info("No route! Worker end!")
             return
         #copy the route list
-        route = copy.deepcopy(appRoute)
+        route = copy.deepcopy(app_route)
         #list of the route using SystemName as key and index as value
-        routeIndexs = {}
-        queryCount = 0
+        route_indexs = {}
+        query_count = 0
         for i in range(len(route)):
-            if app.stopWorker.is_set(): return
+            if app.stop_worker.is_set(): return
             id64 = route[i]["id64"]
-            starType = app.getFromCache(id64)
-            if not starType:
-                systemName = route[i]["system"]
-                param["systemName"].append(systemName)
-                routeIndexs[systemName] = i
-                queryCount+=1
+            star_type = app.get_from_cache(id64)
+            if not star_type:
+                system_name = route[i]["system"]
+                param["systemName"].append(system_name)
+                route_indexs[system_name] = i
+                query_count+=1
             else:
-                route[i]["starTypeName"] = starType
+                route[i]["starTypeName"] = star_type
                 route[i]["edsmUrl"] = f"https://www.edsm.net/en/system?systemID64={id64}"
-        logger.debug(f"{len(route)-queryCount} cached, query {queryCount}")
-        while queryCount > 0:
-            if app.stopWorker.is_set(): return
-            logger.debug("Param: "+str(param))
+        logger.debug("%s cached, query %s", len(route)-query_count, query_count)
+        while query_count > 0:
+            if app.stop_worker.is_set():
+                return
+            logger.debug("Param: %s", param)
             #get info using the url above
             req = requests.post(url, json=param, timeout=(5, 30))
-            limitReset = int(req.headers.get('X-Rate-Limit-Reset', "") or -1)
+            limit_reset = int(req.headers.get('X-Rate-Limit-Reset', "") or -1)
             match req.status_code:
                 case requests.codes.ok:
                     data = req.json()
-                    logger.debug("Data: "+str(data))
+                    logger.debug("Data: %s", data)
                     for row in data:
-                        if app.stopWorker.is_set(): return
-                        systemName = row.get("name", "")
-                        routeIndex = routeIndexs.get(systemName, -1)
-                        if routeIndex < 0:
+                        if app.stop_worker.is_set():
+                            return
+                        system_name = row.get("name", "")
+                        route_index = route_indexs.get(system_name, -1)
+                        if route_index < 0:
                             continue
-                        id64 = route[routeIndex]["id64"]
+                        id64 = route[route_index]["id64"]
                         if id64 == row.get("id64", 0):
-                            starType = row.get("primaryStar", {}).get("type", "")
-                            route[routeIndex]["starTypeName"] = starType
-                            route[routeIndex]["edsmUrl"] = f"https://www.edsm.net/en/system?systemID64={id64}"
-                            app.updateCache(id64, starType)
+                            star_type = row.get("primaryStar", {}).get("type", "")
+                            route[route_index]["starTypeName"] = star_type
+                            route[route_index]["edsmUrl"] = f"https://www.edsm.net/en/system?systemID64={id64}"
+                            app.update_cache(id64, star_type)
                     break
                 case 429:
-                    logger.error(f"Too Many Requests! Try again in {limitReset} sec!")
-                    if limitReset > 0:
-                        waitSec = limitReset - int(time.time()) if limitReset > 1000000000 else limitReset
-                        if app.stopWorker.wait(timeout=waitSec): return
+                    logger.error("Too Many Requests! Try again in %s sec!", limit_reset)
+                    if limit_reset > 0:
+                        wait_sec = limit_reset - int(time.time()) if limit_reset > 1000000000 else limit_reset
+                        if app.stop_worker.wait(timeout=wait_sec):
+                            return
                         continue
                     else:
                         logger.error("Invalid X-Rate-Limit-Reset value!")
-            logger.error("Request not ok! Code: "+str(req.status_code))
+            logger.error("Request not ok! Code: %s", req.status_code)
             return
-        logger.debug("Route after update: "+str(route))
-        app.setRoute(route)
+        logger.debug("Route after update: %s", route)
+        app.set_route(route)
         app.frame.event_generate('<<EDSMUpdate>>', when="tail")
-        app.saveCache()
+        app.save_cache()
     except Exception as e:
-        logger.error(f"{type(e).__name__}{e}")
+        logger.error("%s: %s", type(e).__name__, e)
 
-def DCoHWorker() -> None:
+def dcoh_worker() -> None:
+    """Get thargoid systems list from DCoH"""
     try:
-        logger.debug("DCoHWorker starting.")
+        logger.debug("dcoh_worker starting.")
         url = "https://dcoh.watch/api/v1/overwatch/systems"
-        logger.debug("URL: "+url)
+        logger.debug("URL: %s", url)
         #get info using the url above
         req = requests.get(url)
         if not req.status_code == requests.codes.ok:
-            logger.error("Request not ok! Code: "+str(req.status_code))
+            logger.error("Request not ok! Code: %s", req.status_code)
         data = req.json()
         #logger.debug("Data: "+str(data))
-        thargoidSystems = {}
+        thargoid_systems = {}
         for row in data["maelstroms"]:
-            thargoidSystems[row["systemAddress"]] = "Titan"
+            thargoid_systems[row["systemAddress"]] = "Titan"
         for row in data["systems"]:
-            thargoidSystems[row["systemAddress"]] = row["thargoidLevel"]["name"]
-        logger.debug("Thargoid systems: "+str(thargoidSystems))
-        app.setThargoidSystems(thargoidSystems)
+            thargoid_systems[row["systemAddress"]] = row["thargoidLevel"]["name"]
+        logger.debug("Thargoid systems: %s", thargoid_systems)
+        app.set_thargoid_systems(thargoid_systems)
         app.frame.event_generate('<<EDSMUpdate>>', when="tail")
     except Exception as e:
-        logger.error(f"{type(e).__name__}{e}")
+        logger.error("%s: %s", type(e).__name__, e)
 
 app = NextStop()
 
@@ -403,4 +421,5 @@ def plugin_app(parent: tk.Frame) -> Optional[tk.Frame]:
     return app.setup_main_ui(parent)
 
 def journal_entry(cmdr: str, is_beta: bool, system: str, station: str, entry: dict, state: dict) -> Optional[str]:
-    return app.onEvent(cmdr, is_beta, system, station, entry, state)
+    """Trigger update for every journal update"""
+    return app.on_event(cmdr, is_beta, system, station, entry, state)

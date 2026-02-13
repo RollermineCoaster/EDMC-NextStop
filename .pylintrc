@@ -1,0 +1,5 @@
+[MASTER]
+ignored-modules=theme, config, requests, myNotebook
+
+[MESSAGES CONTROL]
+disable=broad-exception-caught, unused-argument

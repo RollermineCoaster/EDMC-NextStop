@@ -1,50 +1,59 @@
+"""Utility function"""
 import math
-from config import appname
 import logging
+from config import appname
 
 logger = logging.getLogger(f"{appname}.EDMC-NextStop")
 
-def getDistance(pos1, pos2):
+def get_distance(pos1, pos2):
+    """Get distance between pos1 and pos2"""
     return math.sqrt((pos1[0]-pos2[0])**2 + (pos1[1]-pos2[1])**2 + (pos1[2]-pos2[2])**2)
 
-def getCanvasObjHeight(canvas, id):
-    _, y1, _, y2 = canvas.bbox(id)
+def get_canvas_obj_height(canvas, obj_id):
+    """Get canvas object height"""
+    _, y1, _, y2 = canvas.bbox(obj_id)
     return abs(y2-y1)
 
-def getCanvasObjWidth(canvas, id):
-    x1, _, x2, _ = canvas.bbox(id)
+def get_canvas_obj_width(canvas, obj_id):
+    """Get canvas object width"""
+    x1, _, x2, _ = canvas.bbox(obj_id)
     return abs(x2-x1)
 
-def resizeCanvasText(canvas, id, width):
+def resize_canvas_text(canvas, obj_id, width):
+    """Reduce font size to fit the width"""
     #remove the width limit of the object
-    canvas.itemconfigure(id, width=0)
-    if type(width) == "str":
+    canvas.itemconfigure(obj_id, width=0)
+    if isinstance(width, str):
         width = canvas.winfo_fpixels(width)
     #make system name resize dynamically
-    textHeight = getCanvasObjHeight(canvas, id)
-    textFont, textSize = canvas.itemcget(id, "font").split()
-    textSize = int(textSize)
+    text_height = get_canvas_obj_height(canvas, obj_id)
+    text_font, text_size = canvas.itemcget(obj_id, "font").split()
+    text_size = int(text_size)
     #limit the width of the object
-    canvas.itemconfigure(id, width=width)
+    canvas.itemconfigure(obj_id, width=width)
     #while text size > 1pt and current text height > old text height
-    while textSize > 1 and getCanvasObjHeight(canvas, id) > textHeight:
-        textSize -= 1
-        canvas.itemconfigure(id, font=(textFont, textSize))
+    while text_size > 1 and get_canvas_obj_height(canvas, obj_id) > text_height:
+        text_size -= 1
+        canvas.itemconfigure(obj_id, font=(text_font, text_size))
 
-def toPix(canvas, distance):
+def to_pix(canvas, distance):
+    """Convert the distance to pixel"""
     try:
         return canvas.winfo_fpixels(distance)
     except Exception as e:
-        logger.error(f"Failed to get number of pixels! {e}")
+        logger.error("Failed to get number of pixels! %s", e)
     return 0.0
 
-def formatText(value, unit, units, placeholder=""):
-    if not placeholder: placeholder = f"{value}"
+def format_text(value, unit, units, placeholder=""):
+    """Format the text with unit/units or show placeholder text if value < 0"""
+    if not placeholder: 
+        placeholder = f"{value}"
     output = placeholder if value <= 0 else str(value)
     output += f" {unit}" if value <= 1 else f" {units}"
     return output
 
-def getTime(seconds):
+def get_time(seconds):
+    """Get the hour, minute, and second based on the given second."""
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
     return h, m, s
