@@ -24,7 +24,7 @@ import requests
 import myNotebook as nb
 from config import appname, config
 
-from nextstop.ui.boards import SimpleBoard, FancyBoard
+from nextstop.ui.modes import SimpleBoard, FancyBoard
 
 # This **MUST** match the name of the folder the plugin is in.
 PLUGIN_NAME = "EDMC-NextStop"
@@ -47,8 +47,8 @@ class NextStop:
         self.mode = tk.StringVar(value=config.get_str('nextStop_Mode'))
         self.debug_mode = tk.IntVar(value=config.get_int('nextStop_DebugMode'))
         #init module
-        self.ui = None
-        self.frame = None
+        self.ui: SimpleBoard | FancyBoard
+        self.frame: tk.Frame
         logger.debug("Config: nextStop_Mode = %s, nextStop_DebugMode = %s", self.mode.get(), self.debug_mode.get())
         #get info from DCoH using thread
         thread = Thread(target=dcoh_worker, name='DCoH worker')
@@ -105,6 +105,7 @@ class NextStop:
         """Get current route from board class"""
         if not self.ui:
             logger.error("Failed to get_route! UI module is None.")
+            return []
         else:
             return self.ui.get_route()
 

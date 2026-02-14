@@ -43,7 +43,7 @@ FR_PRIVATE = 0x10
 AddFontResourceEx(path.join(path.dirname(__file__), 'nextstop/assets/nextstop-logo.ttf'), FR_PRIVATE, 0)
 
 # NOW you can import your UI classes
-from nextstop.ui.boards import *
+from nextstop.ui.modes import SimpleBoard, FancyBoard
 
 # 1. Setup Mock Data
 MOCK_ROUTE_5 = [
