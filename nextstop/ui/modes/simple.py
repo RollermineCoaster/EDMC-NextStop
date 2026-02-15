@@ -64,22 +64,26 @@ class SimpleRow(BaseRow):
     """Row widget for SimpleBoard"""
     def get_line_text(self):
         """Get the bottom line text"""
-        count = self.width/to_pix(self.canvas, "3p")
+        width = self.size["width"]
+        canvas = self.get_canvas()
+        count = width/to_pix(canvas, "3p")
         return "-"*round(count+.5)
 
     def setup_style(self):
         self.styles = styles = {}
-        canvas = self.canvas
+        width = self.size["width"]
+        height = self.size["height"]
+        canvas = self.get_canvas()
         line_offset = to_pix(canvas, "10p")
         styles["system"] =       {"type": "text", "x": 0,                       "y": 0,            "options": {"anchor": tk.NW, "justify": tk.LEFT}}
         styles["starType"] =     {"type": "text", "x": 0,                       "y": line_offset,   "options": {"anchor": tk.NW, "justify": tk.LEFT}}
         styles["state"] =        {"type": "text", "x": 0,                       "y": line_offset*2, "options": {"anchor": tk.NW, "justify": tk.LEFT}}
-        styles["distance"] =     {"type": "text", "x": self.width,              "y": 0,            "options": {"anchor": tk.NE, "justify": tk.RIGHT}}
+        styles["distance"] =     {"type": "text", "x": width,              "y": 0,            "options": {"anchor": tk.NE, "justify": tk.RIGHT}}
         logo_offset = to_pix(canvas, "20p")
-        styles["reminder"] =     {"type": "text", "x": self.width,              "y": line_offset,   "options": {"anchor": tk.NE, "justify": tk.RIGHT,  "tags": "logo", "font": (LOGO_FONT, 20)}}
-        styles["edsm_logo"] =     {"type": "text", "x": self.width-logo_offset,   "y": line_offset,   "options": {"anchor": tk.NE, "justify": tk.RIGHT,  "tags": "logo", "font": (LOGO_FONT, 20)}}
-        styles["thargoid_logo"] = {"type": "text", "x": self.width-logo_offset*2, "y": line_offset,   "options": {"anchor": tk.NE, "justify": tk.RIGHT,  "tags": "logo", "font": (LOGO_FONT, 20)}}
-        styles["bottomLine"] =   {"type": "text", "x": self.width/2,            "y": self.height,  "options": {"anchor": tk.S,  "justify": tk.CENTER, "tags": "line"}}
+        styles["reminder"] =     {"type": "text", "x": width,              "y": line_offset,   "options": {"anchor": tk.NE, "justify": tk.RIGHT,  "tags": "logo", "font": (LOGO_FONT, 20)}}
+        styles["edsm_logo"] =     {"type": "text", "x": width-logo_offset,   "y": line_offset,   "options": {"anchor": tk.NE, "justify": tk.RIGHT,  "tags": "logo", "font": (LOGO_FONT, 20)}}
+        styles["thargoid_logo"] = {"type": "text", "x": width-logo_offset*2, "y": line_offset,   "options": {"anchor": tk.NE, "justify": tk.RIGHT,  "tags": "logo", "font": (LOGO_FONT, 20)}}
+        styles["bottomLine"] =   {"type": "text", "x": width/2,            "y": height,  "options": {"anchor": tk.S,  "justify": tk.CENTER, "tags": "line"}}
 
         styles["system"]["options"]["text"] = f"{self.index}. {self.get_system_name()}"
         styles["starType"]["options"]["text"] = self.get_star_type_name()

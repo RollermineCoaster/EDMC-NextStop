@@ -198,29 +198,32 @@ class FancyRow(BaseRow):
     def setup_style(self):
         self.styles = styles = {}
         colors = self.board.colors
+        width = self.size["width"]
+        height = self.size["height"]
+        canvas = self.get_canvas()
         #text style
         if self.get_distance_text() == CURRENT_STR:
             bullet_bg_color = bullet_fg_color = colors["main"]
         else:
             bullet_bg_color = colors["minor2"]
             bullet_fg_color = colors["minor1"]
-        styles["bulletBG"] =     {"type": "text", "x": self.height/2,                       "y": self.height/2,  "options": {"anchor": tk.CENTER, "fill": bullet_bg_color,       "font": (LOGO_FONT,    12), "text":BULLET_BG}}
-        styles["bulletFG"] =     {"type": "text", "x": self.height/2,                       "y": self.height/2,  "options": {"anchor": tk.CENTER, "fill": bullet_fg_color,       "font": (LOGO_FONT,    12), "text":BULLET_FG}}
-        styles["routeI"] =       {"type": "text", "x": self.height,                         "y": self.height*.3, "options": {"anchor": tk.W,      "fill": colors["textMain"],  "font": ('Helvetica', 12)}}
+        styles["bulletBG"] =     {"type": "text", "x": height/2,                       "y": height/2,  "options": {"anchor": tk.CENTER, "fill": bullet_bg_color,       "font": (LOGO_FONT,    12), "text":BULLET_BG}}
+        styles["bulletFG"] =     {"type": "text", "x": height/2,                       "y": height/2,  "options": {"anchor": tk.CENTER, "fill": bullet_fg_color,       "font": (LOGO_FONT,    12), "text":BULLET_FG}}
+        styles["routeI"] =       {"type": "text", "x": height,                         "y": height*.3, "options": {"anchor": tk.W,      "fill": colors["textMain"],  "font": ('Helvetica', 12)}}
         #count the route index digit
         index_digit = len(f"{self.index}")
-        sys_tex_offset = to_pix(self.canvas, f"{index_digit*6 + 8}p")
-        styles["system"] =       {"type": "text", "x": self.height+sys_tex_offset,            "y": self.height*.3, "options": {"anchor": tk.W,      "fill": colors["textMain"],  "font": ('Helvetica', 12)}}
-        styles["starType"] =     {"type": "text", "x": self.height,                         "y": self.height*.7, "options": {"anchor": tk.W,      "fill": colors["textMinor"], "font": ('Helvetica', 9)}}
-        right_offset = to_pix(self.canvas, "12p")
-        styles["distance"] =     {"type": "text", "x": self.width-right_offset,              "y": self.height*.3, "options": {"anchor": tk.E,      "fill": colors["textMinor"], "font": ('Helvetica', 11)}}
-        logo_offset = to_pix(self.canvas, "20p")
-        styles["reminder"] =     {"type": "text", "x": self.width-right_offset,              "y": self.height*.7, "options": {"anchor": tk.E,      "fill": colors["textMinor"], "font": (LOGO_FONT,    20)}}
-        styles["edsm_logo"] =     {"type": "text", "x": self.width-right_offset-logo_offset,   "y": self.height*.7, "options": {"anchor": tk.E,      "fill": colors["textMinor"], "font": (LOGO_FONT,    20)}}
-        styles["thargoid_logo"] = {"type": "text", "x": self.width-right_offset-logo_offset*2, "y": self.height*.7, "options": {"anchor": tk.E,      "fill": colors["textMinor"], "font": (LOGO_FONT,    20)}}
+        sys_tex_offset = to_pix(canvas, f"{index_digit*6 + 8}p")
+        styles["system"] =       {"type": "text", "x": height+sys_tex_offset,            "y": height*.3, "options": {"anchor": tk.W,      "fill": colors["textMain"],  "font": ('Helvetica', 12)}}
+        styles["starType"] =     {"type": "text", "x": height,                         "y": height*.7, "options": {"anchor": tk.W,      "fill": colors["textMinor"], "font": ('Helvetica', 9)}}
+        right_offset = to_pix(canvas, "12p")
+        styles["distance"] =     {"type": "text", "x": width-right_offset,              "y": height*.3, "options": {"anchor": tk.E,      "fill": colors["textMinor"], "font": ('Helvetica', 11)}}
+        logo_offset = to_pix(canvas, "20p")
+        styles["reminder"] =     {"type": "text", "x": width-right_offset,              "y": height*.7, "options": {"anchor": tk.E,      "fill": colors["textMinor"], "font": (LOGO_FONT,    20)}}
+        styles["edsm_logo"] =     {"type": "text", "x": width-right_offset-logo_offset,   "y": height*.7, "options": {"anchor": tk.E,      "fill": colors["textMinor"], "font": (LOGO_FONT,    20)}}
+        styles["thargoid_logo"] = {"type": "text", "x": width-right_offset-logo_offset*2, "y": height*.7, "options": {"anchor": tk.E,      "fill": colors["textMinor"], "font": (LOGO_FONT,    20)}}
         #line style
-        line_offset = to_pix(self.canvas, "6p")
-        styles["bottomLine"] =   {"type": "line", "x0": line_offset,    "x1": self.width-line_offset, "y0": self.height,   "y1": self.height,   "options": {"fill": colors["minor1"], "width": "0.766p"}}
+        line_offset = to_pix(canvas, "6p")
+        styles["bottomLine"] =   {"type": "line", "x0": line_offset,    "x1": width-line_offset, "y0": height,   "y1": height,   "options": {"fill": colors["minor1"], "width": "0.766p"}}
 
         styles["routeI"]["options"]["text"] = f"{self.index}. "
         styles["system"]["options"]["text"] = self.get_system_name()
@@ -272,14 +275,15 @@ class FancyRow(BaseRow):
     def on_logo_enter(self, event: tk.Event, cursor="", obj_name="", text=""):
         """Change the cursor and show hints(tooltips)"""
         super().on_logo_enter(event, cursor)
+        canvas = self.get_canvas()
         if obj_name in self.objs:
-            bbox = self.canvas.bbox(self.objs[obj_name])
+            bbox = canvas.bbox(self.objs[obj_name])
             x = (bbox[0]+bbox[2])/2 #(x1-x2)/2
             y = bbox[1] #y1
         else:
-            x = self.canvas.canvasx(event.x)
-            gap = to_pix(self.canvas, "5p")
-            y = self.canvas.canvasy(event.y)-gap
+            x = canvas.canvasx(event.x)
+            gap = to_pix(canvas, "5p")
+            y = canvas.canvasy(event.y)-gap
         self.board.show_hints(x, y, text)
 
     def on_logo_leave(self, event: tk.Event):
@@ -290,13 +294,15 @@ class FancyRow(BaseRow):
     def resize_canvas_text(self):
         """Reduce font size to fit the width"""
         objs = self.objs
+        width = self.size["width"]
+        canvas = self.get_canvas()
         #count the route index digit
         index_digit = len(f"{self.index}")
-        sys_tex_offset = to_pix(self.canvas, f"{index_digit*6 + 8}p")
+        sys_tex_offset = to_pix(canvas, f"{index_digit*6 + 8}p")
         #make text resize dynamically
-        resize_canvas_text(self.canvas, objs["system"],   self.width*.56-sys_tex_offset)
-        resize_canvas_text(self.canvas, objs["starType"], self.width*.52)
-        resize_canvas_text(self.canvas, objs["distance"], self.width*.23)
+        resize_canvas_text(canvas, objs["system"],   width*.56-sys_tex_offset)
+        resize_canvas_text(canvas, objs["starType"], width*.52)
+        resize_canvas_text(canvas, objs["distance"], width*.23)
 
 class FancyBar(BaseWidget):
     """FancyBar widget"""
@@ -309,20 +315,23 @@ class FancyBar(BaseWidget):
     def setup_style(self):
         self.styles = styles = {}
         colors = self.board.colors
+        width = self.size["width"]
+        height = self.size["height"]
+        canvas = self.get_canvas()
 
-        margin = to_pix(self.canvas, "5p")
-        line_length = to_pix(self.canvas, "17.5p")
+        margin = to_pix(canvas, "5p")
+        line_length = to_pix(canvas, "17.5p")
 
-        styles["bg"] = {"type": "rect", "x0": 0, "x1": self.width, "y0": 0, "y1": self.height, "options": {"fill": colors["bg"], "outline": ""}}
+        styles["bg"] = {"type": "rect", "x0": 0, "x1": width, "y0": 0, "y1": height, "options": {"fill": colors["bg"], "outline": ""}}
 
-        styles["nextStop"] =  {"type": "text", "x": self.width/2,        "y": margin,                          "options": {"anchor": tk.N,      "fill": colors["textMinor"], "font": ('Helvetica', 9, 'bold')}}
-        styles["system"] =    {"type": "text", "x": self.width/2,        "y": self.height/2-margin,            "options": {"anchor": tk.CENTER, "fill": colors["textMain"],  "font": ('Helvetica', 12)}}
-        styles["remaining"] = {"type": "text", "x": margin,              "y": self.height-margin-line_length/2, "options": {"anchor": tk.W,      "fill": colors["textMinor"], "font": ('Helvetica', 9)}}
-        styles["jump"] =      {"type": "text", "x": self.width/2-margin, "y": self.height-margin-line_length/2, "options": {"anchor": tk.E,      "fill": colors["textMinor"], "font": ('Helvetica', 10, 'bold')}}
-        styles["min"] =       {"type": "text", "x": self.width/2+margin, "y": self.height-margin-line_length/2, "options": {"anchor": tk.W,      "fill": colors["textMinor"], "font": ('Helvetica', 10, 'bold')}}
+        styles["nextStop"] =  {"type": "text", "x": width/2,        "y": margin,                          "options": {"anchor": tk.N,      "fill": colors["textMinor"], "font": ('Helvetica', 9, 'bold')}}
+        styles["system"] =    {"type": "text", "x": width/2,        "y": height/2-margin,            "options": {"anchor": tk.CENTER, "fill": colors["textMain"],  "font": ('Helvetica', 12)}}
+        styles["remaining"] = {"type": "text", "x": margin,              "y": height-margin-line_length/2, "options": {"anchor": tk.W,      "fill": colors["textMinor"], "font": ('Helvetica', 9)}}
+        styles["jump"] =      {"type": "text", "x": width/2-margin, "y": height-margin-line_length/2, "options": {"anchor": tk.E,      "fill": colors["textMinor"], "font": ('Helvetica', 10, 'bold')}}
+        styles["min"] =       {"type": "text", "x": width/2+margin, "y": height-margin-line_length/2, "options": {"anchor": tk.W,      "fill": colors["textMinor"], "font": ('Helvetica', 10, 'bold')}}
         
-        styles["div"] =    {"type": "line", "x0": self.width/2, "x1": self.width/2, "y0": self.height-margin-line_length, "y1": self.height-margin, "options": {"fill": colors["minor1"], "width": "1.5p"}}
-        styles["bottom"] = {"type": "line", "x0": 0,            "x1": self.width,   "y0": self.height,                   "y1": self.height,        "options": {"fill": colors["minor1"], "width": "3p"}}
+        styles["div"] =    {"type": "line", "x0": width/2, "x1": width/2, "y0": height-margin-line_length, "y1": height-margin, "options": {"fill": colors["minor1"], "width": "1.5p"}}
+        styles["bottom"] = {"type": "line", "x0": 0,            "x1": width,   "y0": height,                   "y1": height,        "options": {"fill": colors["minor1"], "width": "3p"}}
 
         styles["nextStop"]["options"]["text"] = NEXTSTOP_STR
         styles["system"]["options"]["text"] = self.system_name if self.system_name else DASH6_STR

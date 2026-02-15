@@ -63,6 +63,9 @@ class NextStop:
         self.cache_path = path.join(plugin_dir, "system_cache.json")
         self.system_cache = {}
         self.load_cache()
+
+        self.jumping = False
+
         logger.info("NextStop instantiated")
 
     def get_from_cache(self, id64):
@@ -268,16 +271,16 @@ class NextStop:
             logger.debug('NavRoute event handled.')
         elif entry["event"] == "NavRouteClear":
             logger.info("Route clear! Updating UI.")
-            if not self.ui.jumping:
+            if not self.jumping:
                 #clear route list
                 self.set_route([])
                 self.ui.update_canvas()
         elif entry["event"] == "StartJump" and entry["JumpType"] == "Hyperspace":
             logger.info("Jumping to another system.")
-            self.ui.jumping = True
+            self.jumping = True
         elif entry["event"] == "FSDJump":
             logger.info("Arrived at another system. Updating current position.")
-            self.ui.jumping = False
+            self.jumping = False
             #update current pos
             self.set_current_pos(entry["StarPos"])
             self.ui.update_canvas()

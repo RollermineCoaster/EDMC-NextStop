@@ -11,7 +11,10 @@ import logging
 from theme import theme
 from config import appname, config
 
-from nextstop.ui.constant import *
+from nextstop.ui.constant import (SIZE, FUELSTAR_LOGO, DANGER_LOGO,
+                                  NORMAL_STR, CURRENT_STR,
+                                  BROWN_DWARFS, WOLF_RAYET, WHITE_DWARFS,
+                                  SCOOPABLE_STARS, DANGER_STARS)
 
 logger = logging.getLogger(f"{appname}.EDMC-NextStop")
 
@@ -22,7 +25,6 @@ class BaseBoard(ABC):
         self.thargoid_systems= {}
         self.current_index = -1
         self.current_pos = [0.0, 0.0, 0.0]
-        self.jumping = False
         self.size = frame.winfo_fpixels(SIZE)
         self.styles = {}
         self.rows: list[BaseRow] = []
@@ -200,11 +202,8 @@ class BaseWidget(ABC):
     """Base widget"""
     def __init__(self, board: BaseBoard, x, y, width, height):
         self.board = board
-        self.canvas: tk.Canvas = board.canvas
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        self.pos = {"x": x, "y": y}
+        self.size = {"width": width, "height": height}
         self.objs = {}
         self.styles = {}
         self.changed = False
@@ -215,16 +214,27 @@ class BaseWidget(ABC):
         setattr(self, name, value)
         self.changed = True
 
+    def _dict_setter(self, dict_name, key, value):
+        target = getattr(self, dict_name)
+        if target[key] == value:
+            return
+        target[key] = value
+        self.changed = True
+
     def set_width(self, width):
         """Set widget width"""
-        self._setter("width", width)
+        self._dict_setter("size", "width", width)
     def set_height(self, height):
         """Set widget height"""
-        self._setter("height", height)
+        self._dict_setter("size", "height", height)
     def set_pos(self, x, y):
         """Set widget position"""
-        self._setter("x", x)
-        self._setter("y", y)
+        self._dict_setter("pos", "x", x)
+        self._dict_setter("pos", "y", y)
+
+    def get_canvas(self):
+        """Get canvas from board"""
+        return self.board.canvas
 
     @abstractmethod
     def setup_style(self):
@@ -233,17 +243,21 @@ class BaseWidget(ABC):
     def draw(self):
         """Draw canvas objects based on widget style"""
         self.setup_style()
-        canvas = self.canvas
+        canvas = self.get_canvas()
+        x = self.pos["x"]
+        y = self.pos["y"]
         if len(self.objs) > 0:
             self.clear()
         for k, v in self.styles.items():
             match v["type"]:
                 case "text":
-                    obj = canvas.create_text(self.x+v["x"], self.y+v["y"], **v["options"])
+                    obj = canvas.create_text(x+v["x"], y+v["y"], **v["options"])
                 case "line":
-                    obj = canvas.create_line(self.x+v["x0"], self.y+v["y0"], self.x+v["x1"], self.y+v["y1"], **v["options"])
+                    obj = canvas.create_line(x+v["x0"], y+v["y0"],
+                                             x+v["x1"], y+v["y1"], **v["options"])
                 case "rect":
-                    obj = canvas.create_rectangle(self.x+v["x0"], self.y+v["y0"], self.x+v["x1"], self.y+v["y1"], **v["options"])
+                    obj = canvas.create_rectangle(x+v["x0"], y+v["y0"],
+                                                  x+v["x1"], y+v["y1"], **v["options"])
                 case _:
                     logger.error("Unknown object type! %s: %s", k, v)
                     return False
@@ -262,14 +276,16 @@ class BaseWidget(ABC):
             return self.draw()
 
         self.setup_style()
-        canvas = self.canvas
+        canvas = self.get_canvas()
+        x = self.pos["x"]
+        y = self.pos["y"]
         for k, v in self.styles.items():
             obj = self.objs[k]
             match v["type"]:
                 case "text":
-                    canvas.coords(obj, self.x+v["x"], self.y+v["y"])
+                    canvas.coords(obj, x+v["x"], y+v["y"])
                 case "line" | "rect":
-                    canvas.coords(obj, self.x+v["x0"], self.y+v["y0"], self.x+v["x1"], self.y+v["y1"])
+                    canvas.coords(obj, x+v["x0"], y+v["y0"], x+v["x1"], y+v["y1"])
             canvas.itemconfig(obj, **v["options"])
             if "event" in v:
                 for name, event in v["event"].items():
@@ -288,14 +304,14 @@ class BaseWidget(ABC):
     def update_obj(self, obj_name, **options):
         """Update a specific canvas object with the object name"""
         if obj_name in self.objs:
-            self.canvas.itemconfig(obj_name, **options)
+            self.get_canvas().itemconfig(obj_name, **options)
         else:
             logger.error("Object (%s) not found!", obj_name)
 
     def clear(self):
         """Clear all canvas object"""
         for obj_id in self.objs.values():
-            self.canvas.delete(obj_id)
+            self.get_canvas().delete(obj_id)
         self.objs.clear()
 
 class BaseRow(BaseWidget):
@@ -331,78 +347,57 @@ class BaseRow(BaseWidget):
 
     def get_thargoid_state(self):
         """Get thargoid state"""
-        return (NORMAL_STR if self.get_id64() not in self.board.thargoid_systems else self.board.thargoid_systems[self.get_id64()])
+        if self.get_id64() not in self.board.thargoid_systems:
+            return NORMAL_STR
+
+        return self.board.thargoid_systems[self.get_id64()]
 
     def get_star_type_name(self):
         """Get star type name"""
         name = self.system["starTypeName"]
         if name != "":
             return name
-        star_class = self.system["starClass"]
+        star_class: str = self.system["starClass"]
         match star_class:
             #* mean uncertain because NavRoute didn't have that info
             #Scoopable
-            case "O":
-                return "O (Blue-White) Star"
-            case "B" | "A":
-                return f"{star_class} (Blue-White*) Star"
-            case "F":
-                return "F (White*) Star"
-            case "G":
-                return "G (White-Yellow*) Star"
-            case "K":
-                return "K (Yellow-Orange*) Star"
-            case "M":
-                return "M (Red*) Star"
-            #case "B_BlueWhiteSuperGiant" | "A_BlueWhiteSuperGiant":
-                #return f"{star_class[0]} (Blue-White super giant) Star"
-            #case "F_WhiteSuperGiant":
-                #return "F (White super giant) Star"
-            #case "G_WhiteSuperGiant":
-                #return "G (White-Yellow super giant)"
-            #case "K_OrangeGiant":
-                #return "K (Yellow-Orange giant) Star"
-            #case "M_RedGiant":
-                #return "M (Red giant) Star"
-            #case "M_RedSuperGiant":
-                #return "M (Red super giant) Star"
+            case "O": name = "O (Blue-White) Star"
+            case "B": name = "B (Blue-White*) Star"
+            case "A": name = "A (Blue-White*) Star"
+            case "F": name = "F (White*) Star"
+            case "G": name = "G (White-Yellow*) Star"
+            case "K": name = "K (Yellow-Orange*) Star"
+            case "M": name = "M (Red*) Star"
 
             #Brown Dwarfs
-            case v if v in BROWN_DWARFS:
-                return f"{star_class} (Brown dwarf) Star"
+            case v if v in BROWN_DWARFS: name = f"{star_class} (Brown dwarf) Star"
 
             #Proto-stars
-            case "TTS":
-                return "T Tauri Star"
-            case "AeBe":
-                return "Herbig Ae/Be Star"
+            case "TTS":  name = "T Tauri Star"
+            case "AeBe": name = "Herbig Ae/Be Star"
 
             #Wolf-Rayet
-            case "W":
-                return "Wolf-Rayet Star"
             case v if v in WOLF_RAYET:
-                text = star_class.replace("W", "")
-                return f"Wolf-Rayet {text} Star"
+                text = star_class.replace("W", "Wolf-Rayet ").strip()
+                name = f"{text} Star"
 
             #Rare
-            case "MS" | "S":
-                return f"{star_class}-type Star"
+            case "MS" | "S": name = f"{star_class}-type Star"
 
             #White Dwarfs
             case v if v in WHITE_DWARFS:
-                return f"White Dwarf ({star_class}) Star"
+                name = f"White Dwarf ({star_class}) Star"
 
             #Others
-            case "N":
-                return "Neutron Star"
-            case "H":
-                return "Black Hole"
+            case "N": name = "Neutron Star"
+            case "H": name = "Black Hole"
             case "SupermassiveBlackHole":
-                return "Supermassive Black Hole"
+                name = "Supermassive Black Hole"
 
             #Default
-            case _:
-                return f"{star_class} Star"
+            case _: name = f"{star_class} Star"
+
+        return name
 
     def get_distance_text(self):
         """Get distance text"""
@@ -426,14 +421,14 @@ class BaseRow(BaseWidget):
     def show_bottom_line(self, show):
         """Show/hide bottom line"""
         state = tk.NORMAL if show else tk.HIDDEN
-        self.canvas.itemconfig(self.objs["bottomLine"], state=state)
+        self.get_canvas().itemconfig(self.objs["bottomLine"], state=state)
 
     def on_edsm_click(self, event):
         """Open the EDSM link"""
         webbrowser.open(self.get_edsm_url())
     def on_logo_enter(self, event, cursor=""):
         """Change the cursor"""
-        self.canvas.config(cursor=cursor)
+        self.get_canvas().config(cursor=cursor)
     def on_logo_leave(self, event):
         """Change back the cursor to default"""
-        self.canvas.config(cursor="")
+        self.get_canvas().config(cursor="")
